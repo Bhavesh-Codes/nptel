@@ -8,14 +8,15 @@ Everything is static — plain HTML/CSS/JS with no build step and no backend —
 
 - **Home** — overall progress (mastered / attempted / weak), a `Weak pile (N)` button that mixes up to 20 weak questions across **all** weeks (level 1 first, least-recently-seen next), a 12-tile week grid with strength colours + per-question level bars, and a *weakest weeks* list.
 - **Week screen** — four panels per week:
-  - 📘 **Learn** — 3–5 exam-focused concept cards (definitions, bullets, *Exam trap* callouts, comparison tables, inline SVG diagrams recreated from the PDFs, KaTeX formulas with variable glossaries and worked examples) + a **Quick recap** box.
-  - 🧠 **Practice** — all 10 questions with correct options highlighted and the full detailed solution (nothing scored).
-  - ⏱ **Test** — the 10-question assignment test, one at a time, strict scoring (1 mark only for a *Perfect* answer). Retaking never wipes progress — levels just move again.
-  - 🔁 **Weak pile** — locked until the week's test is taken; contains your levels 1–2 questions, level 1 first, LRU ordered; updates live as you answer and on every retake.
+  - **Learn** — 3–5 exam-focused concept cards (definitions, bullets, *Exam trap* callouts, comparison tables, inline SVG diagrams recreated from the PDFs, KaTeX formulas with variable glossaries and worked examples) + a **Quick recap** box.
+  - **Practice** — all 10 questions with correct options highlighted and the full detailed solution (nothing scored).
+  - **Test** — the 10-question assignment test, one at a time, strict scoring (1 mark only for a *Perfect* answer). Retaking never wipes progress — levels just move again.
+  - **Weak pile** — locked until the week's test is taken; contains your levels 1–2 questions, level 1 first, LRU ordered; updates live as you answer and on every retake.
 - **Grading buckets** — *Perfect* (exact match, 1 mark), *Almost* (right options only but some missed), *Wrong pick* (≥1 wrong option, right ≥ wrong), *Way off* (re-queued **once** at the end of the session). A mastered question that slips re-enters the weak pile; a perfect answer only ever pushes levels up (max 3).
 - **Trip tracking** — the app remembers which options you keep wrongly picking or keep missing and tells you (“you keep missing option c”).
 - **Learn pages** with genuine diagrams: use-case `«include»`/`«extend»` recreations, class diagrams with multiplicities, composition diamonds, a sequence diagram, and the course-management use-case diagram.
-- **Dark & light themes** (auto → dark → light cycle), safe-area insets, ≥44 px tap targets, mobile-first layout.
+- **Keyboard-first answering** — `1`–`9` or `A`–`Z` selects an option, `Enter` submits, and `Enter` / `Space` / `→` advances after feedback. Option rows show their shortcut badges.
+- **Responsive by design** — a single flat academic visual system: warm paper, navy ink, 1px rules, six-pixel corners, serif questions and sans-serif UI text. No gradients, glow or motion; safe-area insets and ≥44 px tap targets on phones.
 
 ## Running locally
 
@@ -58,9 +59,9 @@ Week titles live in one config object: `window.SE_DATA.titles` at the top of [`d
 ## Data provenance & validation
 
 - Source of truth: the 12 assignment PDFs in [`PDFs/`](PDFs/).
-- `python parse.py` re-extracts `extracted/*.txt` (via `extract.py`) into `data.js`, and writes `parse_report.txt` (validation) + `dump_review.txt` (full review dump).
-- Validation results: exactly 12 weeks × 10 questions, 120 total (18 MCQ / 102 MSQ), every answer key exists within the options, keys contiguous — see `parse_report.txt` (ALL CLEAN).
-- Source-PDF exceptions (stray options, missing/pasted solutions, answer-key typos, spacing and exponent repairs) are preserved verbatim and **flagged per question** in each question's `fixes` array — shown as a *Source-exception note* in the app instead of being silently "fixed".
+- `python parse.py` re-extracts `extracted/*.txt` (via `extract.py`) into `data.js`. Its validation report and review dump are local `.txt` files, ignored by Git.
+- Validation results: exactly 12 weeks × 10 questions, 120 total (18 MCQ / 102 MSQ), every answer key exists within the options, keys contiguous — all clean.
+- Source-PDF exceptions (stray options, missing/pasted solutions, answer-key typos, spacing and exponent repairs) are preserved verbatim and **flagged per question** in each question's `fixes` array — shown as a *Source-exception note* in the app instead of being silently "fixed". Readability repairs (broken hyphenation, unbalanced quotes, truncated sentences, indentation of code listings) are applied directly to the question text.
 
 ## Progress storage
 

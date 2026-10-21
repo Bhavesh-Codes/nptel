@@ -36,6 +36,61 @@ function toast(msg) {
   toast._t = setTimeout(() => t.classList.remove("show"), 2400);
 }
 
+/* Static, hand-written SVG icons — no emoji, no icon font, no network. */
+const ICONS = {
+  back: '<svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>',
+  sun: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>',
+  moon: '<svg viewBox="0 0 24 24"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4 8.5 8.5 0 1 0 20 14.5Z"/></svg>',
+  auto: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16Z" fill="currentColor" stroke="none"/></svg>',
+  check: '<svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>',
+  x: '<svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>',
+  plus: '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
+  lock: '<svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>',
+  book: '<svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg>',
+  next: '<svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>',
+};
+function icon(name, cls) {
+  const s = el("span", "icon" + (cls ? " " + cls : ""));
+  s.setAttribute("aria-hidden", "true");
+  s.innerHTML = ICONS[name] || "";
+  return s;
+}
+
+/* Render question/solution text: prose keeps its line breaks, code becomes a <pre>. */
+function appendRichText(host, text) {
+  const raw = String(text == null ? "" : text).replace(/\r\n?/g, "\n").trim();
+  if (!raw) return;
+  raw.split(/\n{2,}/).forEach(block => {
+    const lines = block.split("\n").filter(line => line.trim() !== "");
+    if (!lines.length) return;
+    const codeish = lines.filter(line =>
+      /^\s*(if|else|for|while|int|float|double|char|void|return|scanf|printf|public|private|protected|class|\{|\})/.test(line) ||
+      /;\s*$/.test(line)
+    ).length;
+    const isCode = /[;{}]/.test(block) && codeish >= Math.max(1, Math.ceil(lines.length * 0.6));
+    if (isCode) {
+      const pre = el("pre", "codeblock");
+      pre.textContent = block.replace(/^\n+|\n+$/g, "");
+      host.appendChild(pre);
+    } else {
+      const p = el("p", "qpara");
+      lines.forEach((line, i) => {
+        if (i) p.appendChild(document.createElement("br"));
+        p.appendChild(document.createTextNode(line));
+      });
+      host.appendChild(p);
+    }
+  });
+}
+
+/* One document-level keyboard handler at a time (screens replace it). */
+let keyHandler = null;
+function setKeyHandler(fn) {
+  if (keyHandler) document.removeEventListener("keydown", keyHandler);
+  keyHandler = fn;
+  if (fn) document.addEventListener("keydown", fn);
+}
+
 /* ------------------------------------------------------------------ *
  * 1. Theme (auto → dark → light cycle)
  * ------------------------------------------------------------------ */
@@ -44,12 +99,13 @@ function savedTheme() { try { return localStorage.getItem(THEME_KEY); } catch (e
 function applyTheme(mode) {
   document.documentElement.removeAttribute("data-theme");
   const dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-  document.documentElement.setAttribute("data-theme", mode === "auto" ? (dark ? "dark" : "light") : mode);
+  const resolved = mode === "auto" ? (dark ? "dark" : "light") : mode;
+  document.documentElement.setAttribute("data-theme", resolved);
   const meta = $("meta[name=theme-color]");
-  if (meta) meta.setAttribute("content", dark ? "#0e131f" : "#f4f6fb");
+  if (meta) meta.setAttribute("content", resolved === "dark" ? "#0b1220" : "#faf8f5");
 }
 let themeMode = savedTheme() || "auto";
-function themeGlyph() { return themeMode === "dark" ? "☀️" : themeMode === "light" ? "🌙" : "🌗"; }
+function themeIconName() { return themeMode === "dark" ? "sun" : themeMode === "light" ? "moon" : "auto"; }
 function cycleTheme() {
   themeMode = themeMode === "auto" ? "dark" : themeMode === "dark" ? "light" : "auto";
   try { localStorage.setItem(THEME_KEY, themeMode); } catch (e) { /* ok */ }
@@ -97,10 +153,10 @@ function gradeQ(picked, correct) {
 }
 function catLabel(cat) {
   return {
-    perfect: ["Perfect — full marks", "good", "✓"],
-    almost: ["Almost — right options only, but some missed", "mid", "◑"],
-    wrongpick: ["Wrong pick — you selected wrong option(s)", "poor", "✗"],
-    wayoff: ["Way off — mostly incorrect", "poor", "✗"],
+    perfect: ["Perfect — full marks", "good", "check"],
+    almost: ["Almost — right options only, but some missed", "mid", "plus"],
+    wrongpick: ["Wrong pick — you selected wrong option(s)", "poor", "x"],
+    wayoff: ["Way off — mostly incorrect", "poor", "x"],
   }[cat];
 }
 /* Level rules (spec Step 6):
@@ -320,75 +376,171 @@ function figureFor(qid) {
  * 6. Question cards & option rows
  * ------------------------------------------------------------------ */
 function optRow(q, o, cfg) {
+  cfg = cfg || {};
   const row = el("div", "opt" + (cfg.cls ? " " + cfg.cls : ""));
-  row.setAttribute("role", cfg.interactive ? "checkbox" : "option");
-  if (cfg.interactive) row.setAttribute("aria-checked", cfg.picked ? "true" : "false");
-  const k = el("span", "key", o.k.toUpperCase());
-  const t = el("span", "txt", o.t);
-  row.appendChild(k); row.appendChild(t);
-  if (cfg.mark) row.appendChild(el("span", "optmark", cfg.mark));
+  row.dataset.key = o.k;
+  row.setAttribute("role", cfg.interactive ? (cfg.single ? "radio" : "checkbox") : "option");
   if (cfg.interactive) {
+    row.setAttribute("aria-checked", cfg.picked ? "true" : "false");
     row.tabIndex = 0;
-    const toggle = () => {
-      cfg.picked = !cfg.picked;
-      row.setAttribute("aria-checked", cfg.picked ? "true" : "false");
-      if (cfg.onChange) cfg.onChange();
-    };
-    row.addEventListener("click", toggle);
-    row.addEventListener("keydown", ev => {
-      if (ev.key === " " || ev.key === "Enter") { ev.preventDefault(); toggle(); }
-    });
   }
+  row.appendChild(el("span", "key", o.k.toUpperCase()));
+  row.appendChild(el("span", "txt", o.t));
+  if (cfg.mark) {
+    const st = el("span", "opt-status");
+    st.appendChild(icon(cfg.mark, "sm"));
+    row.appendChild(st);
+  }
+  if (cfg.shortcut) row.appendChild(el("kbd", "opt-kbd", cfg.shortcut));
   return row;
 }
-/* modes: "practice" (answers+solution) · "answered" (feedback) · "ask" (interactive) */
+
+function feedbackNode(graded) {
+  const L = catLabel(graded.cat);
+  const fb = el("div", "fb " + L[1]);
+  fb.appendChild(icon(L[2], "sm"));
+  fb.appendChild(el("span", null, L[0]));
+  fb.appendChild(el("span", "sc", graded.score ? "1 mark" : "0 marks"));
+  return fb;
+}
+
+function keyHint() {
+  const h = el("span", "keyhint");
+  h.appendChild(el("kbd", null, "1"));
+  h.appendChild(document.createTextNode("–"));
+  h.appendChild(el("kbd", null, "4"));
+  h.appendChild(document.createTextNode(" select · "));
+  h.appendChild(el("kbd", null, "Enter"));
+  h.appendChild(document.createTextNode(" submit"));
+  return h;
+}
+
+/**
+ * Render a question.
+ * modes: "practice" (answer + solution), "answered" (graded feedback), "ask" (interactive).
+ */
 function questionCard(q, mode, ctx) {
   ctx = ctx || {};
   const card = el("div", "qcard");
-  const head = el("div", null);
-  head.appendChild(el("span", "qidchip", q.id.toUpperCase()));
-  head.appendChild(el("span", "qtype", q.ans.length === 1 ? "MCQ" : "MSQ — multiple answers"));
-  card.appendChild(head);
-  card.appendChild(el("p", "qtext", q.text));
+  card.setAttribute("role", "group");
+  card.setAttribute("aria-label", "Question " + q.id.toUpperCase());
 
-  const picked = ctx.picked || [];
+  const head = el("div", "question-head");
+  head.appendChild(el("span", "qidchip", q.id.toUpperCase()));
+  head.appendChild(el("span", "qtype", q.ans.length === 1 ? "MCQ" : "MSQ · multiple answers"));
+  if (mode === "ask") head.appendChild(keyHint());
+  card.appendChild(head);
+
+  const qtext = el("div", "qtext");
+  appendRichText(qtext, q.text);
+  card.appendChild(qtext);
+
+  const picked = (ctx.picked || []).slice();
+  const single = q.ans.length === 1;
   const stack = el("div", "opts");
-  q.options.forEach(o => {
-    if (mode === "ask") {
-      stack.appendChild(optRow(q, o, {
+  if (mode === "ask" && single) stack.setAttribute("role", "radiogroup");
+  const slot = el("div", "answer-slot");
+  const rows = [];
+
+  if (mode === "ask") {
+    const selected = new Set(picked);
+    const sync = notify => {
+      rows.forEach(row => {
+        const on = selected.has(row.dataset.key);
+        row.setAttribute("aria-checked", on ? "true" : "false");
+        row.classList.toggle("is-selected", on);
+      });
+      if (notify && ctx.onPick) ctx.onPick(Array.from(selected));
+    };
+    const choose = key => {
+      if (card.__locked) return;
+      if (single) { selected.clear(); selected.add(key); }
+      else if (selected.has(key)) selected.delete(key);
+      else selected.add(key);
+      sync(true);
+    };
+    q.options.forEach((o, i) => {
+      const row = optRow(q, o, {
         interactive: true,
-        picked: picked.includes(o.k),
-        onChange: () => { ctx.onPick && ctx.onPick(); },
-      }));
-      return;
-    }
-    let cls = "", mark = "";
-    const isC = q.ans.includes(o.k), isP = picked.includes(o.k);
-    if (mode === "practice") {
-      if (isC) { cls = "is-correct"; mark = "✓"; }
-    } else if (mode === "answered") {
-      if (isC && isP) { cls = "is-correct"; mark = "✓"; }
-      else if (!isC && isP) { cls = "is-wrongpick"; mark = "✗"; }
-      else if (isC && !isP) { cls = "is-missed"; mark = "+"; }
-      else if (!isC && !isP && ctx.graded == null) { cls = "is-picked"; }
-    }
-    stack.appendChild(optRow(q, o, { cls, mark }));
-  });
+        single,
+        picked: selected.has(o.k),
+        shortcut: i < 9 ? String(i + 1) : o.k.toUpperCase(),
+      });
+      row.addEventListener("click", () => choose(o.k));
+      row.addEventListener("keydown", ev => {
+        if (ev.key !== " ") return;
+        ev.preventDefault();
+        ev.stopPropagation();
+        choose(o.k);
+      });
+      rows.push(row);
+      stack.appendChild(row);
+    });
+    card.__choose = choose;
+    card.__picked = () => Array.from(selected);
+    card.__sync = () => sync(false);
+  } else {
+    q.options.forEach(o => {
+      let cls = "", mark = "";
+      const isC = q.ans.includes(o.k), isP = picked.includes(o.k);
+      if (mode === "practice") {
+        if (isC) { cls = "is-correct"; mark = "check"; }
+      } else if (mode === "answered") {
+        if (isC && isP) { cls = "is-correct"; mark = "check"; }
+        else if (!isC && isP) { cls = "is-wrongpick"; mark = "x"; }
+        else if (isC && !isP) { cls = "is-missed"; mark = "plus"; }
+        else if (!isC && !isP && ctx.graded == null) { cls = "is-picked"; }
+      }
+      stack.appendChild(optRow(q, o, { cls, mark }));
+    });
+  }
   card.appendChild(stack);
 
   if (q.fig) { const f = figureFor(q.fig); if (f) card.appendChild(f); }
 
-  if (ctx.graded) {
-    const L = catLabel(ctx.graded.cat);
-    const fb = el("div", "fb " + L[1]);
-    fb.appendChild(el("span", null, L[2] + " " + L[0]));
-    fb.appendChild(el("span", "sc", ctx.graded.score ? "1 mark" : "0 marks"));
-    card.appendChild(fb);
-    const trips = tripMessages(q, picked);
-    if (trips.length) { const t = el("div", "trips"); t.textContent = trips.join(" "); card.appendChild(t); }
+  if (mode === "practice") {
+    slot.appendChild(solutionBox(q));
+  } else if (mode === "answered") {
+    if (ctx.graded) {
+      card.classList.add("is-answered");
+      slot.appendChild(feedbackNode(ctx.graded));
+      const trips = tripMessages(q, picked);
+      if (trips.length) slot.appendChild(el("div", "trips", trips.join(" ")));
+    }
+    slot.appendChild(solutionBox(q));
   }
-  if (mode === "practice" || ctx.graded) card.appendChild(solutionBox(q));
+  card.appendChild(slot);
   return card;
+}
+
+/* Reveal grading in the existing card, so the option rows never jump. */
+function revealAnswer(card, q, picked, graded) {
+  card.__locked = true;
+  card.classList.add("is-answered");
+  $$(".opt", card).forEach(row => {
+    const key = row.dataset.key;
+    const isC = q.ans.includes(key), isP = picked.includes(key);
+    row.setAttribute("aria-checked", isP ? "true" : "false");
+    row.setAttribute("aria-disabled", "true");
+    row.removeAttribute("tabindex");
+    row.classList.remove("is-selected");
+    let cls = "", mark = "";
+    if (isC && isP) { cls = "is-correct"; mark = "check"; }
+    else if (!isC && isP) { cls = "is-wrongpick"; mark = "x"; }
+    else if (isC && !isP) { cls = "is-missed"; mark = "plus"; }
+    if (cls) row.classList.add(cls);
+    if (mark) {
+      const st = el("span", "opt-status");
+      st.appendChild(icon(mark, "sm"));
+      const kbd = $(".opt-kbd", row);
+      if (kbd) row.insertBefore(st, kbd); else row.appendChild(st);
+    }
+  });
+  const slot = $(".answer-slot", card);
+  slot.appendChild(feedbackNode(graded));
+  const trips = tripMessages(q, picked);
+  if (trips.length) slot.appendChild(el("div", "trips", trips.join(" ")));
+  slot.appendChild(solutionBox(q));
 }
 function solutionBox(q) {
   const b = el("div", "solution");
@@ -432,6 +584,7 @@ let mixedSession = null;
 
 function route() {
   clearActions();
+  setKeyHandler(null);
   const { seg } = parseHash();
   APP.textContent = "";
   window.scrollTo(0, 0);
@@ -453,8 +606,9 @@ function topbar(title, sub, opts) {
   opts = opts || {};
   const bar = el("div", "topbar");
   if (opts.back) {
-    const b = el("button", "iconbtn", "←");
-    b.setAttribute("aria-label", "Back");
+    const b = el("button", "iconbtn");
+    b.setAttribute("aria-label", "Back to home");
+    b.appendChild(icon("back"));
     b.addEventListener("click", () => go("#/"));
     bar.appendChild(b);
   }
@@ -462,9 +616,15 @@ function topbar(title, sub, opts) {
   if (sub) h.appendChild(el("small", null, sub));
   bar.appendChild(h);
   bar.appendChild(el("div", "spacer"));
-  const t = el("button", "iconbtn", themeGlyph());
+  const t = el("button", "iconbtn");
   t.setAttribute("aria-label", "Cycle theme (currently " + themeMode + ")");
-  t.addEventListener("click", cycleTheme);
+  t.setAttribute("title", "Theme: " + themeMode);
+  t.appendChild(icon(themeIconName()));
+  t.addEventListener("click", () => {
+    cycleTheme();
+    t.textContent = "";
+    t.appendChild(icon(themeIconName()));
+  });
   bar.appendChild(t);
   return bar;
 }
@@ -487,6 +647,7 @@ function renderHome() {
   const pct = Math.round(100 * st.mastered / 120);
 
   APP.appendChild(topbar("NPTEL Software Engineering", "Study, practice & test — all 12 weeks"));
+  const homeTop = el("div", "home-top");
 
   const hero = el("section", "card");
   hero.appendChild(el("h2", null, "Your progress"));
@@ -503,7 +664,7 @@ function renderHome() {
   const bar = el("div", "bar");
   const bi = el("i"); bi.style.cssText = `width:${pct}%;background:var(--accent)`;
   bar.appendChild(bi); hero.appendChild(bar);
-  APP.appendChild(hero);
+  homeTop.appendChild(hero);
 
   const wp = el("section", "card");
   wp.appendChild(el("h2", null, "Weak pile"));
@@ -517,7 +678,8 @@ function renderHome() {
   wp.appendChild(el("p", "small dim", st.weak === 0
     ? "Empty — take a week Test first. Questions you slip on land here; Perfect answers move to level 3."
     : "Up to 20 questions across all weeks, level 1 first, then least recently seen."));
-  APP.appendChild(wp);
+  homeTop.appendChild(wp);
+  APP.appendChild(homeTop);
 
   APP.appendChild(el("h2", null, "Weeks"));
   const legend = el("div", "legend");
@@ -610,7 +772,7 @@ function renderWeek(w, panel) {
 
   const chips = el("nav", "chips");
   const weakCount = weekPile(w).length;
-  [["learn", "Learn 📘"], ["practice", "Practice 🧠"], ["test", "Test ⏱️"], ["pile", "Weak pile 🔁"]]
+  [["learn", "Learn"], ["practice", "Practice"], ["test", "Test"], ["pile", "Weak pile"]]
     .forEach(([k, label]) => {
       const c = el("a", "chip" + (panel === k ? " active" : ""), label);
       if (k === "pile" && weakCount) c.appendChild(el("span", "n", String(weakCount)));
@@ -631,7 +793,7 @@ function renderWeek(w, panel) {
 function renderLearn(w, host) {
   const content = window.LEARN_CONTENT[w];
   host.appendChild(el("p", "dim small", "Exam-focused concept cards. Move on to Practice or the Test when done."));
-  (content.cards || []).forEach(c => host.appendChild(window.LearnRender.renderCard(c)));
+  (content.cards || []).forEach((c, i) => host.appendChild(window.LearnRender.renderCard(c, i)));
   (content.formulas || []).forEach(f => host.appendChild(window.LearnRender.renderFormula(f)));
   if (content.recap) host.appendChild(window.LearnRender.renderRecap(content.recap));
 }
@@ -656,98 +818,110 @@ function sessionFinals(sess) {
 
 function renderSessionStep(host, sess, opts) {
   opts = opts || {};
-  host.textContent = "";
   if (sess.i >= sess.queue.length) return opts.onFinish(sess);
 
   const qid = sess.queue[sess.i];
   const q = QMAP[qid];
+  host.textContent = "";
   window.scrollTo(0, 0);
+  host.appendChild(progressLine(sess.i + 1, sess.queue.length,
+    sess.kind === "test" ? "Test" : sess.kind === "wpile" ? "Weak pile" : "Weak pile session"));
+
+  const advance = () => {
+    sess.i += 1;
+    sess.picked = [];
+    sess.graded = null;
+    sess.step = "ask";
+    if (sess.i >= sess.queue.length) opts.onFinish(sess);
+    else renderSessionStep(host, sess, opts);
+  };
+  const nextBar = () => {
+    const bar = actionsBar();
+    const nextBtn = el("button", "btn primary", sess.i + 1 >= sess.queue.length ? "Finish" : "Next question");
+    nextBtn.addEventListener("click", advance);
+    const hint = el("span", "keyhint");
+    hint.appendChild(el("kbd", null, "→"));
+    hint.appendChild(document.createTextNode(" or "));
+    hint.appendChild(el("kbd", null, "Space"));
+    hint.appendChild(document.createTextNode(" next"));
+    bar.append(nextBtn, hint);
+    setKeyHandler(ev => {
+      if (ev.ctrlKey || ev.metaKey || ev.altKey || ev.defaultPrevented) return;
+      const tag = ev.target && ev.target.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || tag === "BUTTON" || tag === "A") return;
+      if (ev.key === "Enter" || ev.key === " " || ev.key === "ArrowRight") {
+        ev.preventDefault();
+        advance();
+      }
+    });
+  };
 
   /* ----- asking ----- */
   if (sess.step === "ask" || sess.step === undefined) {
     sess.step = "ask";
-    host.appendChild(progressLine(sess.i + 1, sess.queue.length,
-      sess.kind === "test" ? "Test" : sess.kind === "wpile" ? "Weak pile" : "Weak pile session"));
-
+    let submitBtn = null;
     const card = questionCard(q, "ask", {
       picked: sess.picked,
-      onPick() {
-        /* keep picks on the session so navigating away & back preserves them */
-        sess.picked = $$(".opt[role=checkbox]", card)
-          .filter(r => r.getAttribute("aria-checked") === "true")
-          .map(r => r.querySelector(".key").textContent.toLowerCase());
-        submitBtn.disabled = sess.picked.length === 0;
+      onPick(picked) {
+        /* keep picks on the session so navigating away and back preserves them */
+        sess.picked = picked;
+        if (submitBtn) submitBtn.disabled = picked.length === 0;
       },
     });
     host.appendChild(card);
 
     const bar = actionsBar();
-    const submitBtn = el("button", "btn primary", "Submit");
+    submitBtn = el("button", "btn primary", "Submit");
     submitBtn.disabled = sess.picked.length === 0;
-    submitBtn.addEventListener("click", () => {
-      const picked = $$(".opt[role=checkbox]", card).filter(r => r.getAttribute("aria-checked") === "true")
-        .map(r => r.querySelector(".key").textContent.toLowerCase());
+    bar.append(submitBtn, keyHint());
+
+    const submit = () => {
+      const picked = card.__picked();
       if (!picked.length) { toast("Select at least one option"); return; }
-      submit(qid, picked);
+      const res = recordAttempt(qid, picked);
+      sess.picked = picked;
+      sess.graded = res;
+      sess.results.push({ qid, cat: res.cat, before: res.before, after: res.after, picked });
+      if (res.cat === "wayoff" && !sess.requeued[qid]) {
+        sess.requeued[qid] = true;
+        sess.queue.push(qid);
+        toast("Way off — added back at the end of this round (once)");
+      }
+      sess.step = "feedback";
+      revealAnswer(card, q, picked, res); /* mutate in place: options do not jump */
+      clearActions();
+      nextBar();
+    };
+    submitBtn.addEventListener("click", submit);
+
+    setKeyHandler(ev => {
+      if (ev.ctrlKey || ev.metaKey || ev.altKey || ev.defaultPrevented) return;
+      const tag = ev.target && ev.target.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || tag === "BUTTON" || tag === "A") return;
+      if (ev.key === "Enter") {
+        ev.preventDefault();
+        if (!submitBtn.disabled) submit();
+        return;
+      }
+      let idx = -1;
+      if (/^[1-9]$/.test(ev.key)) idx = Number(ev.key) - 1;
+      else if (/^[a-zA-Z]$/.test(ev.key)) idx = ev.key.toLowerCase().charCodeAt(0) - 97;
+      if (idx >= 0 && idx < q.options.length) {
+        ev.preventDefault();
+        card.__choose(q.options[idx].k);
+      }
     });
-    bar.appendChild(submitBtn);
     return;
   }
 
-  /* ----- feedback ----- */
+  /* ----- feedback (restored after navigating away) ----- */
   if (sess.step === "feedback") {
-    host.appendChild(progressLine(sess.i + 1, sess.queue.length));
-    const res = sess.graded;
-    host.appendChild(questionCard(q, "answered", { picked: sess.picked, graded: res }));
-    const bar = actionsBar();
-    const nextBtn = el("button", "btn primary", sess.i + 1 >= sess.queue.length ? "Finish" : "Next question");
-    nextBtn.addEventListener("click", () => {
-      sess.i += 1;
-      sess.picked = [];
-      sess.graded = null;
-      sess.step = "ask";
-      if (sess.i >= sess.queue.length) opts.onFinish(sess);
-      else renderSessionStep(host, sess, opts);
-    });
-    bar.appendChild(nextBtn);
-  }
-
-  function submit(qid2, picked) {
-    const res = recordAttempt(qid2, picked);
-    sess.picked = picked;
-    sess.graded = res;
-    sess.results.push({ qid: qid2, cat: res.cat, before: res.before, after: res.after, picked });
-    if (res.cat === "wayoff" && !sess.requeued[qid2]) {
-      sess.requeued[qid2] = true;
-      sess.queue.push(qid2);
-      toast("Way off — added back at the end of this round (once)");
-    }
-    sess.step = "feedback";
-    renderSessionStep(host, sess, opts);
+    host.appendChild(questionCard(q, "answered", { picked: sess.picked, graded: sess.graded }));
+    nextBar();
   }
 }
 
 /* ---------------- Test panel ---------------- */
-function renderTest(w, host) {
-  const sess = wsessions["test" + w];
-  if (sess) { renderSessionStep(host, sess, { onFinish: () => finishTest(w, host, sess) }); return; }
-
-  host.appendChild(el("h2", null, "Week " + w + " test"));
-  const c = el("section", "card");
-  c.appendChild(el("p", "dim small",
-    "10 questions, one at a time. Multi-select answers must include every correct option, exactly like the real assignments — but scoring is strict: 1 mark only for a Perfect answer."));
-  const b = el("button", "btn primary big", state.testTaken[w] ? "Retake test" : "Start test");
-  b.addEventListener("click", () => {
-    wsessions["test" + w] = makeSession(WEEKS[w - 1].questions.map(q => q.id), "test", w);
-    route();
-  });
-  c.appendChild(b);
-  if (state.testTaken[w]) c.appendChild(el("p", "small dim", "Last taken: " + new Date(state.testTaken[w]).toLocaleString()));
-  host.appendChild(c);
-
-  if (lastTest[w]) host.appendChild(testResultsCard(w, lastTest[w]));
-}
-
 /* results section (shown on the Test panel when a session isn't running) */
 function resultsSection(w, data) {
   const sec = el("div");
@@ -771,9 +945,11 @@ function resultsSection(w, data) {
     const q = QMAP[r.qid];
     const L = catLabel(r.cat);
     const b = el("button");
-    const m = el("span", "rvmark", L[2]);
+    const m = el("span", "rvmark");
+    m.appendChild(icon(L[2], "sm"));
     m.style.color = L[1] === "good" ? "var(--ok)" : L[1] === "mid" ? "var(--warn)" : "var(--bad)";
-    const t = el("span", "rvtext small", q.text.length > 74 ? q.text.slice(0, 74) + "…" : q.text);
+    const preview = q.text.replace(/\s+/g, " ").trim();
+    const t = el("span", "rvtext small", preview.length > 74 ? preview.slice(0, 74) + "…" : preview);
     const l = el("span", "rvlvl", "L" + r.before + "→" + r.after);
     b.append(m, t, l);
     b.addEventListener("click", () => {
@@ -855,7 +1031,7 @@ function renderWeekPile(w, host) {
   if (!state.testTaken[w]) {
     host.appendChild(el("h2", null, "Weak pile"));
     const c = el("section", "card lockbox");
-    c.appendChild(el("span", "em", "🔒"));
+    c.appendChild(icon("lock", "lg state-icon"));
     c.appendChild(el("p", "dim", "This week's weak pile opens after you take the Week " + w + " Test — it is built from the questions you slip on."));
     const b = el("a", "btn primary big", "Take the test"); b.href = "#/week/" + w + "/test";
     c.appendChild(b);
@@ -866,7 +1042,7 @@ function renderWeekPile(w, host) {
   const pile = weekPile(w);
   if (!pile.length) {
     const c = el("section", "card emptybox");
-    c.appendChild(el("span", "em", "🌱"));
+    c.appendChild(icon("book", "lg state-icon"));
     c.appendChild(el("b", null, "Nothing weak right now"));
     c.appendChild(el("p", "dim small", "Every attempted question here is at level 3. Retake the test to re-challenge them — misses re-enter the pile."));
     const b = el("a", "btn primary big", "Retake test"); b.href = "#/week/" + w + "/test";
@@ -919,7 +1095,7 @@ function renderMixedPile() {
   const sess = mixedSession;
   if (!sess.queue.length) {
     const c = el("section", "card emptybox");
-    c.appendChild(el("span", "em", "🎉"));
+    c.appendChild(icon("book", "lg state-icon"));
     c.appendChild(el("b", null, "Weak pile is empty"));
     c.appendChild(el("p", "dim small", "Take a week Test first — questions you slip on land here."));
     c.appendChild(Object.assign(el("a", "btn primary big", "Home"), { href: "#/" }));

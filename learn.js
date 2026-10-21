@@ -13,11 +13,11 @@ const mk = (tag, cls, text) => {
   return e;
 };
 window.LearnRender = {
-  renderCard(c) {
+  renderCard(c, n) {
     const card = mk("div", "lcard");
     const h = mk("h3");
-    h.appendChild(mk("span", "em", c.i || "•"));
-    h.appendChild(document.createTextNode(c.t || ""));
+    h.appendChild(mk("span", "card-index", String((n || 0) + 1).padStart(2, "0")));
+    h.appendChild(mk("span", "card-title", c.t || ""));
     card.appendChild(h);
     if (c.sub) card.appendChild(mk("p", "dim small", c.sub));
     if (c.b && c.b.length) {
@@ -25,9 +25,9 @@ window.LearnRender = {
       c.b.forEach(b => ul.appendChild(mk("li", null, b)));
       card.appendChild(ul);
     }
-    if (c.def) { const x = mk("div", "callout def"); x.innerHTML = '<span class="clabel">Definition</span>'; x.appendChild(mk("div", null, c.def)); card.appendChild(x); }
-    if (c.key) { const x = mk("div", "callout key"); x.innerHTML = '<span class="clabel">Remember</span>'; x.appendChild(mk("div", null, c.key)); card.appendChild(x); }
-    if (c.trap) { const x = mk("div", "callout trap"); x.innerHTML = '<span class="clabel">Exam trap</span>'; x.appendChild(mk("div", null, c.trap)); card.appendChild(x); }
+    if (c.def) { const x = mk("div", "callout def"); x.appendChild(mk("span", "clabel", "Definition")); x.appendChild(mk("div", null, c.def)); card.appendChild(x); }
+    if (c.key) { const x = mk("div", "callout key"); x.appendChild(mk("span", "clabel", "Remember")); x.appendChild(mk("div", null, c.key)); card.appendChild(x); }
+    if (c.trap) { const x = mk("div", "callout trap"); x.appendChild(mk("span", "clabel", "Exam trap")); x.appendChild(mk("div", null, c.trap)); card.appendChild(x); }
     if (c.table) {
       const tb = mk("table", "compare");
       if (c.table.title) {
@@ -89,8 +89,7 @@ window.LearnRender = {
   },
   renderRecap(list) {
     const r = mk("div", "recap");
-    const lb = mk("div", "rlabel", "⚡ Quick recap");
-    r.appendChild(lb);
+    r.appendChild(mk("div", "rlabel", "Quick recap"));
     const ul = mk("ul");
     list.forEach(x => ul.appendChild(mk("li", null, x)));
     r.appendChild(ul);
@@ -104,7 +103,7 @@ window.LEARN_CONTENT = {
 /* ------------------------------- WEEK 1 ------------------------------- */
 1: {
   cards: [
-    { i: "🧱", t: "What software engineering actually is",
+    { t: "What software engineering actually is",
       def: "A systematic, disciplined and quantifiable approach to developing, operating and maintaining software.",
       b: [
         "Software = programs + data structures + documentation. Docs are part of the product.",
@@ -113,7 +112,7 @@ window.LEARN_CONTENT = {
       ],
       trap: "“Faster hardware removes software quality issues” — never. Design, logic and security flaws are independent of processing speed (W1Q1).",
     },
-    { i: "🧑‍💼", t: "Jobs, projects and products — where software work falls",
+    { t: "Jobs, projects and products — where software work falls",
       b: [
         "Service projects: work done for a specific client — maintenance contracts, custom development, testing services, porting/outsource work (W1Q4, W1Q8).",
         "Product projects (COTS): built for a mass market and sold as off-the-shelf software — product development, not a service.",
@@ -121,7 +120,7 @@ window.LEARN_CONTENT = {
       ],
       key: "Custom, client-bound work = service. Mass-sale shrink-wrapped software = product.",
     },
-    { i: "⚠️", t: "Build & fix, entropy and why quality slips",
+    { t: "Build & fix, entropy and why quality slips",
       b: [
         "Build-and-fix: hack it together, patch over and over — leads to schedule/cost overruns, poor structure, and eventually a rewrite.",
         "Software entropy: without deliberate refactoring, every change degrades structure — continuous maintenance does NOT automatically improve it (W1Q3).",
@@ -129,7 +128,7 @@ window.LEARN_CONTENT = {
       ],
       trap: "“Maintenance always improves the software” is a classic distractor — only disciplined change improves structure.",
     },
-    { i: "📏", t: "Readability & structured programming",
+    { t: "Readability & structured programming",
       b: [
         "Readable code lowers maintenance cost, eases debugging and team handover — readability is a maintenance/understandability goal, not a runtime-efficiency one (W1Q7).",
         "Structured programming (Dijkstra): build control flow from sequence, selection and iteration only — no arbitrary GOTO (W1Q2).",
@@ -151,7 +150,7 @@ window.LEARN_CONTENT = {
 /* ------------------------------- WEEK 2 ------------------------------- */
 2: {
   cards: [
-    { i: "🌊", t: "Classical Waterfall model",
+    { t: "Classical Waterfall model",
       b: [
         "Phases: Requirements → Specification (SRS) → Design → Implementation → Testing → Deployment & Maintenance.",
         "Output of one phase = input to the NEXT; feedback only to the immediately preceding phase (minor corrections).",
@@ -160,7 +159,7 @@ window.LEARN_CONTENT = {
       ],
       trap: "“The waterfall supports frequent backtracking between all phases during normal execution” — FALSE; only limited feedback to the previous phase.",
     },
-    { i: "🏁", t: "Milestones & the 99% complete syndrome",
+    { t: "Milestones & the 99% complete syndrome",
       def: "A milestone = a tangible, verifiable end-product of a phase (SRS document, design document, test report…).",
       b: [
         "Milestones make progress measurable and trackable; they anchor reviews and payment gates (W2Q1, W2Q10).",
@@ -169,7 +168,7 @@ window.LEARN_CONTENT = {
       ],
       key: "Milestone = document/verified artifact, not '% complete'. Errors are cheapest to fix in their phase of origin.",
     },
-    { i: "🔄", t: "Iterative, incremental, prototyping, RAD, V-model",
+    { t: "Iterative, incremental, prototyping, RAD, V-model",
       b: [
         "Incremental: deliver usable slices with growing functionality; Iterative: cycle through phases repeatedly until mature; iterative models need more customer involvement.",
         "Prototyping: build a quick throwaway (or evolutionary) model when requirements are unclear/hard to express; code of a throwaway prototype is typically discarded (W2Q9).",
@@ -179,7 +178,7 @@ window.LEARN_CONTENT = {
       ],
       trap: "Feasibility includes technical, economic and operational aspects — evaluating them BEFORE commitment is standard practice (W2Q3).",
     },
-    { i: "🛠️", t: "Maintenance types — the eternal trap",
+    { t: "Maintenance types — the eternal trap",
       table: { cols: ["Type", "Triggered by", "Example"],
         rows: [
           ["Corrective", "defects/bugs reported after delivery", "fix a crash in the billing module"],
@@ -205,7 +204,7 @@ window.LEARN_CONTENT = {
 /* ------------------------------- WEEK 3 ------------------------------- */
 3: {
   cards: [
-    { i: "⚡", t: "Agile fundamentals",
+    { t: "Agile fundamentals",
       b: [
         "Working software over comprehensive documentation; respond to change over following a plan (Agile manifesto) (W3Q1, W3Q3).",
         "Deliver in small increments (typically 1–3 weeks), each producing quality, working code with continuous customer feedback.",
@@ -214,7 +213,7 @@ window.LEARN_CONTENT = {
       ],
       trap: "Any option claiming agile “requires completing all documentation before coding” or “delivers the final system at the end only” is FALSE.",
     },
-    { i: "🏃", t: "Scrum: roles, backlogs, sprints",
+    { t: "Scrum: roles, backlogs, sprints",
       b: [
         "Roles: Product Owner (owns and prioritises the product backlog, represents customer), Scrum Master (facilitates, removes obstacles — not the team's coder), Team (self-organising, ~5–9 members) (W3Q9).",
         "Product/backlog: ordered list of ALL desired features; refined continuously (W3Q10).",
@@ -224,7 +223,7 @@ window.LEARN_CONTENT = {
       ],
       trap: "“Scrum master holds the sprint review and codes features” — the Scrum Master facilitates; the TEAM reviews work daily, not the master.",
     },
-    { i: "🧗", t: "Extreme Programming (XP) practices",
+    { t: "Extreme Programming (XP) practices",
       b: [
         "Pair programming: two developers, one keyboard — continuous review; collectively owned code.",
         "Test-driven development: write the unit test FIRST, then the code.",
@@ -233,7 +232,7 @@ window.LEARN_CONTENT = {
       ],
       key: "XP = engineering practices (pairing, TDD, refactoring). Scrum = management framework (roles, sprints, ceremonies).",
     },
-    { i: "🌪️", t: "Software entropy in agile life",
+    { t: "Software entropy in agile life",
       b: [
         "As a system is modified repeatedly, its structure decays unless refactoring is scheduled as a first-class activity (W3Q3's entropy trap).",
         "Symptoms: duplicated logic, long methods, ever-growing classes, patch-on-patch fixes.",
@@ -254,7 +253,7 @@ window.LEARN_CONTENT = {
 /* ------------------------------- WEEK 4 ------------------------------- */
 4: {
   cards: [
-    { i: "📝", t: "The SRS document",
+    { t: "The SRS document",
       def: "The SRS is the ultimate contract on WHAT the software will do — completely describing its external behaviour, and NOT how it's implemented.",
       b: [
         "Answers “what”, never “how” — no design or code choices in the SRS (W4Q1, W4Q4).",
@@ -263,7 +262,7 @@ window.LEARN_CONTENT = {
       ],
       trap: "Options listing “detailed source code”, “coding standards”, “program listings”, or “describing design techniques” are NOT SRS sections (W4Q3, IEEE 830-1998).",
     },
-    { i: "🧾", t: "IEEE 830-1998 SRS skeleton",
+    { t: "IEEE 830-1998 SRS skeleton",
       table: { cols: ["Section", "Contains"],
         rows: [
           ["1. Introduction", "purpose, scope, definitions, references, overview"],
@@ -276,7 +275,7 @@ window.LEARN_CONTENT = {
         "Design constraints DO belong: platform (“must run on Linux”), standards, hardware limits (W4Q6).",
       ],
     },
-    { i: "🔀", t: "Functional vs non-functional — classify fast",
+    { t: "Functional vs non-functional — classify fast",
       table: { cols: ["Says what the system DOES", "Says what the system must BE/have"],
         rows: [
           ["transfer funds between accounts (W4Q5: functional + “service provided by the system”)", "security: biometric login (W4Q9)"],
@@ -290,7 +289,7 @@ window.LEARN_CONTENT = {
       ],
       trap: "“Must run on Linux” looks functional but is a design constraint → non-functional (W4Q6). Watch for “constraint on design”/“design constraint” wording.",
     },
-    { i: "🔍", t: "Requirements engineering & SRS review",
+    { t: "Requirements engineering & SRS review",
       b: [
         "Workflow: requirements gathering/elicitation (incl. prototyping) → analysis → specification → validation/review.",
         "Analysis identifies inconsistencies, ambiguities, incompleteness — and classifies into functional/non-functional (W4Q8).",
@@ -312,7 +311,7 @@ window.LEARN_CONTENT = {
 /* ------------------------------- WEEK 5 ------------------------------- */
 5: {
   cards: [
-    { i: "🧩", t: "Modularity & functional independence",
+    { t: "Modularity & functional independence",
       b: [
         "Modularity: split software into separately named, addressable modules — enables team split, reuse, and simpler unit testing (W5Q1).",
         "Functional independence = HIGH cohesion + LOW coupling — the design quality goal (W5Q6).",
@@ -320,7 +319,7 @@ window.LEARN_CONTENT = {
       ],
       key: "Aim: modules that do ONE thing well (high cohesion) and talk through narrow data interfaces (low coupling). Trade-off: too many modules raise integration cost (WP: optimum count as design goal).",
     },
-    { i: "🍯", t: "Cohesion ladder — worst to best",
+    { t: "Cohesion ladder — worst to best",
       table: { title: "From coincidental (bad) up to functional (good)", cols: ["Level", "What binds the module's parts", "Signal example"],
         rows: [
           ["1. Coincidental", "nothing in common; random grouping", "utils.c gathers everything"],
@@ -334,7 +333,7 @@ window.LEARN_CONTENT = {
       b: ["Weak cohesion trio ≤ temporal (W5Q10): coincidental, logical, temporal are the weak forms."],
       trap: "Same-time execution = TEMPORAL, not procedural. A module selected by flag/caller = LOGICAL, not temporal.",
     },
-    { i: "🔗", t: "Coupling ladder — best to worst",
+    { t: "Coupling ladder — best to worst",
       table: { title: "From data (good) down to content (bad)", cols: ["Level", "What couples the modules", "Signal example"],
         rows: [
           ["1. Data", "passing simple data items by value into parameters", "computeArea(length, width)"],
@@ -349,7 +348,7 @@ window.LEARN_CONTENT = {
       ],
       trap: "Content coupling is the absolute worst; passing a flag = control coupling; global data = common coupling.",
     },
-    { i: "🎯", t: "Reading design questions under exam pressure", 
+    { t: "Reading design questions under exam pressure", 
       b: [
         "Ask: how do these pieces relate? Same data? → communicational. Same time? → temporal. Sequenced by flow? → procedural.",
         "Coupling questions: what crosses the module boundary? values → data; structure → stamp; flag → control; global → common; internals → content.",
@@ -369,7 +368,7 @@ window.LEARN_CONTENT = {
 /* ------------------------------- WEEK 6 ------------------------------- */
 6: {
   cards: [
-    { i: "🔬", t: "Structured analysis & functional decomposition",
+    { t: "Structured analysis & functional decomposition",
       b: [
         "Function-oriented design: decompose by FUNCTIONS/data flow (top-down); OO design decomposes by interacting OBJECTS (W6Q1).",
         "Structured analysis: represent the problem as data flow through processes — produces DFDs + data dictionary (+ process mini-specs) (W6Q2, W6Q9).",
@@ -377,7 +376,7 @@ window.LEARN_CONTENT = {
         "Structured design maps DFD processes onto modules; aims for high cohesion/low coupling between them.",
       ],
     },
-    { i: "🔶", t: "DFD — syntax and what it does NOT show",
+    { t: "DFD — syntax and what it does NOT show",
       table: { cols: ["Symbol", "Meaning"],
         rows: [
           ["Rounded bubble / circle", "process — “do something with data” (numbered 0, 1, 2…)"],
@@ -392,7 +391,7 @@ window.LEARN_CONTENT = {
       ],
       trap: "Every W6 option saying DFD “represents control flow / decisions / system sequence” is FALSE.",
     },
-    { i: "🏛️", t: "Levels of DFD & the balancing rule",
+    { t: "Levels of DFD & the balancing rule",
       b: [
         "Level 0 = context diagram: whole system as ONE process (#0) + external entities (W6Q7).",
         "Level 1: split into the major system functions; Level 2: refine each further, until primitive processes remain.",
@@ -401,7 +400,7 @@ window.LEARN_CONTENT = {
       ],
       key: "Balancing = parent bubble's inflows/outflows == child diagram's net inputs/outputs.",
     },
-    { i: "📖", t: "Data dictionary",
+    { t: "Data dictionary",
       def: "A structured catalogue defining every data flow, data store, process and data element appearing in the DFDs.",
       b: [
         "Describes composite data items via their component elements; includes names, aliases, and contents (W6Q10).",
@@ -422,7 +421,7 @@ window.LEARN_CONTENT = {
 /* ------------------------------- WEEK 7 ------------------------------- */
 7: {
   cards: [
-    { i: "🕵️", t: "OO analysis vs OO design, via UML",
+    { t: "OO analysis vs OO design, via UML",
       b: [
         "OO analysis = WHAT: actors + use cases (W7Q1), domain classes; OO design = HOW: refine into design classes, interactions, and detailed relationships (W8Q6 covers the formal split).",
         "UML models are unified vocabulary for visualising, specifying and documenting systems; structural (class, object, component, deployment) + behavioural (use case, sequence, activity, state machine).",
@@ -430,7 +429,7 @@ window.LEARN_CONTENT = {
       ],
       trap: "Statements like “UML shows only implementation details”, “cannot model non-functional requirements” context, or “only for OO languages” are FALSE (W7Q8).",
     },
-    { i: "♻️", t: "Generalization (is-a) and inheritance power-ups",
+    { t: "Generalization (is-a) and inheritance power-ups",
       b: [
         "“A savings account IS A bank account” → generalization: SavingsAccount inherits from BankAccount attributes and operations (W7Q2).",
         "Inheritance advantages: reuse of attributes/operations, substitutability (Liskov at runtime), polymorphism, lower duplication (W7Q10).",
@@ -439,7 +438,7 @@ window.LEARN_CONTENT = {
       ],
       trap: "“Two classes derived from the same parents = multiple inheritance” — FALSE; that's a shared hierarchical structure. Multiple inheritance is about a single class having several parents.",
     },
-    { i: "🔗", t: "«include» vs «extend» — direction decides",
+    { t: "«include» vs «extend» — direction decides",
       b: [
         "«include»: the BASE use case ALWAYS executes the included one (factored-out common behaviour). Dashed arrow: base → included. Workflow factorization (W7Q6: “verify payment” included in Place Order).",
         "«extend»: OPTIONAL/conditional behaviour extending the base at extension points. Dashed arrow: extension → base. (W7Q5's Print Receipt extends Withdraw Cash — you can still withdraw without a receipt.)",
@@ -467,7 +466,7 @@ window.LEARN_CONTENT = {
 /* ------------------------------- WEEK 8 ------------------------------- */
 8: {
   cards: [
-    { i: "🏦", t: "Reading class diagrams & multiplicities",
+    { t: "Reading class diagrams & multiplicities",
       b: [
         "Multiplicity sits at the FAR end of an association: Branch issues 1..* Account; Customer has 0..* Account; Account uses 0..* ATM (W8Q1).",
         "1..* = at least one; 0..* = any number; 0..1 = optional; ranges like 3..5 possible.",
@@ -476,7 +475,7 @@ window.LEARN_CONTENT = {
       fig: "w8q1",
       trap: "1..* vs 0..* on the issues-relationship: a Branch can exist with no Account, but the association still demands 1..* Accounts for the linking semantics — read the labels, don't assume.",
     },
-    { i: "💎", t: "Composition vs aggregation",
+    { t: "Composition vs aggregation",
       table: { cols: ["", "Composition (filled ◆)", "Aggregation (hollow ◇)"],
         rows: [
           ["Lifetime", "part dies with the whole", "part can outlive / be shared"],
@@ -492,7 +491,7 @@ window.LEARN_CONTENT = {
       fig: ["w8q2", "w8q3"],
       trap: "“A Wheel may independently exist outside a Car in this design” — FALSE when the whole is responsible for creating and owning the parts.",
     },
-    { i: "🧭", t: "Analysis objects: boundary / entity / controller",
+    { t: "Analysis objects: boundary / entity / controller",
       b: [
         "Boundary objects: interfaces between the system and actors — screens, forms, menus, external system interfaces (W8Q7). One per use case at the analysis stage (W9Q6's counting).",
         "Entity objects: core information, usually persistent — survive individual use cases and even application restarts (BankAccount, Ticket) (W8Q8).",
@@ -500,7 +499,7 @@ window.LEARN_CONTENT = {
       ],
       trap: "Entities are NOT screens; controllers are NOT persistent; boundary objects do NOT store long-lived data.",
     },
-    { i: "⏱️", t: "Sequence diagrams & composite states",
+    { t: "Sequence diagrams & composite states",
       b: [
         "Sequence diagram: lifelines (dashed verticals), activations (thin rectangles = executing), messages left→right over time; dashed arrows = returns; «create» = object creation (W8Q5).",
         "Synchronous message: caller waits (solid arrowhead); asynchronous: fire-and-forget (open arrowhead).",
@@ -522,7 +521,7 @@ window.LEARN_CONTENT = {
 /* ------------------------------- WEEK 9 ------------------------------- */
 9: {
   cards: [
-    { i: "🪲", t: "Error → fault → failure",
+    { t: "Error → fault → failure",
       table: { cols: ["Term", "Where it lives", "Example"],
         rows: [
           ["Error", "human mistake (deviation from intent)", "developer confuses < and <="],
@@ -535,7 +534,7 @@ window.LEARN_CONTENT = {
       ],
       trap: "“The system rejected a VALID input” = failure, not fault; “the wrong condition in code” = fault; the developer's slip = error.",
     },
-    { i: "✅", t: "Verification vs validation",
+    { t: "Verification vs validation",
       b: [
         "Verification: are we building the system RIGHT — conformance to the specification; mostly static: reviews, walkthroughs, inspections.",
         "Validation: are we building the RIGHT system — does it meet user needs; usually dynamic testing with real users (W9Q4).",
@@ -543,7 +542,7 @@ window.LEARN_CONTENT = {
       ],
       key: "V&V: “right product” vs “product right”. Reviews = verification, never validation.",
     },
-    { i: "🌾", t: "Testing principles that drive the exam",
+    { t: "Testing principles that drive the exam",
       b: [
         "Pesticide paradox: repeating the SAME tests eventually stops finding new bugs → revise/vary test suites (W9Q9).",
         "Exhaustive testing is impossible; testing shows the PRESENCE of defects, never their absence.",
@@ -553,7 +552,7 @@ window.LEARN_CONTENT = {
       ],
       trap: "“Independent testers write and run system tests, developers focus on unit tests” — TRUE. “Customers test everything” — FALSE.",
     },
-    { i: "🧿", t: "CRC cards & boundary-class counting",
+    { t: "CRC cards & boundary-class counting",
       b: [
         "CRC = Class–Responsibilities–Collaborators: brainstorming/design tool to distribute responsibilities across classes (W9Q1).",
         "Boundary classes: system↔actor interfaces; each use case needs one boundary interface → a use case diagram with 5 use cases ⇒ 5 boundary classes (W9Q6).",
@@ -575,7 +574,7 @@ window.LEARN_CONTENT = {
 /* ------------------------------- WEEK 10 ------------------------------- */
 10: {
   cards: [
-    { i: "🎟️", t: "Equivalence partitioning",
+    { t: "Equivalence partitioning",
       def: "Partition the input domain into classes that behave alike; pick ONE representative per class — valid and invalid alike.",
       b: [
         "Triangle type (a,b,c): classes like valid-scalene, valid-isosceles, valid-equilateral, invalid (degenerate/negative) sides (W10Q2, W10Q6).",
@@ -584,7 +583,7 @@ window.LEARN_CONTENT = {
       ],
       trap: "“Test ONLY valid values” is wrong — invalid classes get tested too. “s2 length exactly 3 only” or “s1 length always 20” are NOT sensible partitions (W10Q10).",
     },
-    { i: "🧮", t: "Counting combinations & combinatorial explosion",
+    { t: "Counting combinations & combinatorial explosion",
       b: [
         "3 Boolean parameters → 2³ = 8 valid combinations (W10Q8): each variable has 2 values, so the classes are all 8 assignments.",
         "Exhaustive testing multiplies partition sizes: 5 subjects × 3 difficulties × 4 types = 60 complete cases (W10Q4).",
@@ -592,7 +591,7 @@ window.LEARN_CONTENT = {
       ],
       trap: "Exhaustive ≠ pairwise: pairwise covers pairs, not full cross-products — the savings grow with more parameters.",
     },
-    { i: "📏", t: "Boundary value analysis (BVA)",
+    { t: "Boundary value analysis (BVA)",
       b: [
         "Underlying assumption: defects cluster at the edges of input ranges — off-by-one bugs live there (W10Q7).",
         "Test min, min+, nominal, max−, max — plus just-outside invalid values for boundaries (e.g., 0 and 101 for a 1..100 field).",
@@ -600,7 +599,7 @@ window.LEARN_CONTENT = {
       ],
       key: "Valid length 1..100 → test 1, 2, 50, 99, 100 and invalid 0, 101.",
     },
-    { i: "🗺️", t: "Technique taxonomy & effort planning",
+    { t: "Technique taxonomy & effort planning",
       table: { cols: ["Black-box (spec-based)", "White-box (code-based)"],
         rows: [
           ["equivalence partitioning", "statement / branch coverage"],
@@ -635,7 +634,7 @@ window.LEARN_CONTENT = {
 /* ------------------------------- WEEK 11 ------------------------------- */
 11: {
   cards: [
-    { i: "🔐", t: "Coverage ladder — strong beats weak",
+    { t: "Coverage ladder — strong beats weak",
       table: { cols: ["Coverage", "Requires", "Strength"],
         rows: [
           ["Statement", "every line executes at least once", "weakest"],
@@ -651,7 +650,7 @@ window.LEARN_CONTENT = {
       ],
       trap: "“Condition coverage implies branch coverage” — FALSE. The atoms get both values but the composed decision may never flip.",
     },
-    { i: "🧮", t: "Counting conditions, rows and rules",
+    { t: "Counting conditions, rows and rules",
       b: [
         "Multiple condition coverage of n atomic conditions = 2^n tests (W11Q1: two conditions ⇒ 2² = 4: TT, TF, FT, FF).",
         "Decision table with c independent Boolean conditions has 2^c rules (W11Q5: 3 conditions ⇒ 8; multiple rules may share the same action).",
@@ -660,7 +659,7 @@ window.LEARN_CONTENT = {
       ],
       trap: "Condition coverage asks each ATOM for both outcomes — not every combination, not decision outcomes.",
     },
-    { i: "🧪", t: "MC/DC — independence on a budget",
+    { t: "MC/DC — independence on a budget",
       def: "Modified Condition/Decision Coverage: every condition shown to INDEPENDENTLY affect the decision's outcome, with a minimal test set.",
       b: [
         "Minimum tests = n + 1 for n atomic conditions (the standard result) — 2 conditions ⇒ 3 tests (W12Q10).",
@@ -669,7 +668,7 @@ window.LEARN_CONTENT = {
       ],
       key: "n conditions ⇒ n+1 MC/DC tests; 2^n multiple-condition tests; decision table ⇒ 2^c rules.",
     },
-    { i: "🃏", t: "Combinatorial testing, cause-effect, mixing approaches",
+    { t: "Combinatorial testing, cause-effect, mixing approaches",
       b: [
         "t-way interaction: values of t parameters covering all their combinations; 2-way = pairwise (W11Q3).",
         "Cause-effect graphing maps Boolean causes to effects, then derives decision-table test cases (W11Q6).",
@@ -702,7 +701,7 @@ window.LEARN_CONTENT = {
 /* ------------------------------- WEEK 12 ------------------------------- */
 12: {
   cards: [
-    { i: "🌀", t: "Cyclomatic complexity — count the independent paths",
+    { t: "Cyclomatic complexity — count the independent paths",
       def: "Cyclomatic complexity V(G) = number of linearly independent paths through a program's flow graph.",
       b: [
         "M = E − N + 2P; for a single connected program (P = 1): M = E − N + 2.",
@@ -713,7 +712,7 @@ window.LEARN_CONTENT = {
       ],
       trap: "V(G) equals predicate nodes + 1 — NOT the node count, NOT the statement count. And it never drops below 1.",
     },
-    { i: "🗺️", t: "Basis path testing flow",
+    { t: "Basis path testing flow",
       b: [
         "Draw the flow graph: nodes = statements, edges = control flow, diamond nodes = decisions.",
         "Compute V(G) with the formulas; it fixes the SIZE of the basis set.",
@@ -721,7 +720,7 @@ window.LEARN_CONTENT = {
       ],
       key: "Independent path = a path that introduces at least one new edge not covered by previous paths.",
     },
-    { i: "🧟", t: "Mutation testing — measuring your test suite",
+    { t: "Mutation testing — measuring your test suite",
       b: [
         "Take the program, create mutants by small syntactic changes (swap operators, flip conditions…); run the suite against each mutant.",
         "Killed mutant: some test's output changes → your suite detects it. Survived mutant: suite too weak → add tests (W12Q5, W12Q6).",
@@ -731,7 +730,7 @@ window.LEARN_CONTENT = {
       ],
       trap: "A survived mutant doesn't always mean weak tests — it might be equivalent. Equivalence is undecidable, hence the cost.",
     },
-    { i: "📉", t: "Data-flow testing & strength ordering",
+    { t: "Data-flow testing & strength ordering",
       b: [
         "Data-flow testing tracks definition/use (du) pairs of variables: def before use, anomalies like def-def or use-without-def (W12Q4).",
         "Coverage strength recap (W12Q2): statement < branch/condition < MC/DC < multiple-condition < all-paths.",

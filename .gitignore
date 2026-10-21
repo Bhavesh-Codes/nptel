@@ -12,6 +12,9 @@ render.py
 parse.py
 check_chars.py
 
+# Generated parser logs and review dumps (local only, never shipped)
+*.txt
+
 # Test tooling (optional to publish)
 test_logic.js
 E2E.js

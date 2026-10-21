@@ -1,6 +1,6 @@
 // NPTEL Software Engineering (2026) - generated from the assignment PDFs.
 // Source of truth: PDFs in /PDFs. Exceptions are clearly flagged in each
-// question's `fixes` array (see parse_report.txt for the full audit).
+// question's `fixes` array; source exceptions stay visible in the app.
 window.SE_DATA = {
  "titles": {
   "1": "Introduction to Software Engineering",
@@ -123,7 +123,7 @@ window.SE_DATA = {
       "d",
       "e"
      ],
-     "sol": "Frequent changes, poor documentation, repeated patches, and lack of refactoring gradually degrade a software system's structure, making it harder to understand and modify over time— this is known as software entropy. The statement that continuous maintenance always improves structure is false, because without deliberate effort, maintenance often introduces new flaws and inconsistencies."
+     "sol": "Frequent changes, poor documentation, repeated patches, and lack of refactoring gradually degrade a software system's structure, making it harder to understand and modify over time — this is known as software entropy. The statement that continuous maintenance always improves structure is false, because without deliberate effort, maintenance often introduces new flaws and inconsistencies."
     },
     {
      "id": "w1q4",
@@ -158,7 +158,7 @@ window.SE_DATA = {
       "d",
       "e"
      ],
-     "sol": "Software service projects involve providing ongoing support, custom solutions, or contract-based work for specific clients, such as maintenance, customization, outsourced development, and testing services. In contrast, developing a commercial off-the-shelf (COTS) product is a product- development effort, not a service project, as it is built for mass sale rather than for a particular client."
+     "sol": "Software service projects involve providing ongoing support, custom solutions, or contract-based work for specific clients, such as maintenance, customization, outsourced development, and testing services. In contrast, developing a commercial off-the-shelf (COTS) product is a product-development effort, not a service project, as it is built for mass sale rather than for a particular client."
     },
     {
      "id": "w1q5",
@@ -417,7 +417,7 @@ window.SE_DATA = {
      "id": "w2q2",
      "week": 2,
      "n": 2,
-     "text": "A student while working on a software project, is suffering from the “99% complete syndrome. Which of the following situations are likely indicators of this syndrome?",
+     "text": "A student, while working on a software project, is suffering from the “99% complete syndrome”. Which of the following situations are likely indicators of this syndrome?",
      "options": [
       {
        "k": "a",
@@ -864,7 +864,7 @@ window.SE_DATA = {
       "c",
       "e"
      ],
-     "sol": "Frequent changes, poor documentation, repeated patches, and lack of refactoring gradually degrade a software system's structure, making it harder to understand and modify over time— this is known as software entropy. The statement that continuous maintenance always improves structure is false, because without deliberate effort, maintenance often introduces new flaws and inconsistencies. [Note: the source PDF's Detailed Solution here is a pasted leftover about software entropy and does not answer this Agile question. Corrected explanation: Agile delivers working, high-quality software in small increments (a), relies on frequent customer feedback with continuous improvement (c), and responds to changing requirements during development (e). It does not require completing all documentation before implementation (b), it delivers increments rather than one final complete system (d), and it values working software over heavy documents (f).]",
+     "sol": "Agile delivers working, high-quality software in small increments (a), relies on frequent customer feedback and continuous improvement (c), and responds effectively to changing requirements during development (e). It does not require completing all documentation before implementation (b), it delivers increments rather than one final complete system (d), and it values working software over heavy documents (f).",
      "fixes": [
       "The source PDF's Detailed Solution for this question was the wrong text (copied from another question); a corrected explanation was appended and is clearly marked in-app."
      ]
@@ -979,7 +979,7 @@ window.SE_DATA = {
       "d",
       "f"
      ],
-     "sol": "The Sprint Backlog contains tasks selected for the current sprint, is owned and managed by the Development Team, is updated daily as work progresses, and consists of detailed task- level work items. It does not contain all work items for the entire project (that’s the Product Backlog), and it is not controlled exclusively by the Scrum Master—the team owns it."
+     "sol": "The Sprint Backlog contains tasks selected for the current sprint, is owned and managed by the Development Team, is updated daily as work progresses, and consists of detailed task-level work items. It does not contain all work items for the entire project (that’s the Product Backlog), and it is not controlled exclusively by the Scrum Master—the team owns it."
     },
     {
      "id": "w3q7",
@@ -1225,7 +1225,7 @@ window.SE_DATA = {
      "id": "w4q3",
      "week": 4,
      "n": 3,
-     "text": "Which of the following are sections/subsections are not commonly included in an SRS document as per the IEEE 830-1998 Software Requirements Specification (SRS) standard?",
+     "text": "Which of the following sections/subsections are not commonly included in an SRS document as per the IEEE 830-1998 Software Requirements Specification (SRS) standard?",
      "options": [
       {
        "k": "a",
@@ -1497,7 +1497,7 @@ window.SE_DATA = {
       },
       {
        "k": "d",
-       "t": "Have the dependencies among modules clearly defined?"
+       "t": "Have the dependencies among modules been clearly defined?"
       },
       {
        "k": "e",
@@ -1906,7 +1906,7 @@ window.SE_DATA = {
      "id": "w6q1",
      "week": 6,
      "n": 1,
-     "text": "Which of the following statements correctly differentiate function-oriented design from object- oriented design?",
+     "text": "Which of the following statements correctly differentiate function-oriented design from object-oriented design?",
      "options": [
       {
        "k": "a",
@@ -2279,7 +2279,7 @@ window.SE_DATA = {
       "d",
       "e"
      ],
-     "sol": "A data dictionary describes composite data items by breaking them into component elements (b), is commonly used alongside DFDs (d), and includes names and purposes of data items (e). It does not require every data item to map directly to program variables (a), does not represent control flow (c), and does not specify execution sequence (f)—those are implementation and control-flow"
+     "sol": "A data dictionary describes composite data items by breaking them into component elements (b), is commonly used alongside DFDs (d), and includes names and purposes of data items (e). It does not require every data item to map directly to program variables (a), does not represent control flow (c), and does not specify execution sequence (f)—those are implementation and control-flow concerns."
     }
    ]
   },
@@ -2363,7 +2363,7 @@ window.SE_DATA = {
      "ans": [
       "c"
      ],
-     "sol": "A saving account is a type of bank account is an example of Generalization-specialization.",
+     "sol": "“A savings account is a type of bank account” is an example of generalization–specialization.",
      "fixes": [
       "The two UML sentences at the end of this solution belong to Week 7 Q1 in the source PDF and were moved there."
      ]
@@ -2448,7 +2448,7 @@ window.SE_DATA = {
      "id": "w7q5",
      "week": 7,
      "n": 5,
-     "text": "Consider the following UML use-case diagram: Which of the following statements are correct regarding the above diagram?",
+     "text": "Consider the following UML use-case diagram. Which of the following statements are correct regarding the diagram?",
      "options": [
       {
        "k": "a",
@@ -2558,7 +2558,7 @@ window.SE_DATA = {
       "d",
       "f"
      ],
-     "sol": "Use-case descriptions should be written in simple user-oriented language focusing on actor- system interaction, not programming syntax, class-level details, or implementation internals."
+     "sol": "Use-case descriptions should be written in simple user-oriented language focusing on actor-system interaction, not programming syntax, class-level details, or implementation internals."
     },
     {
      "id": "w7q8",
@@ -2710,7 +2710,7 @@ window.SE_DATA = {
       "c",
       "g"
      ],
-     "sol": "An account may use multiple ATMs and A saving is an account are the correct option.",
+     "sol": "An Account may use multiple ATMs, and a Saving is an Account.",
      "fig": "w8q1",
      "fixes": [
       "The source PDF shows a diagram referenced by this question; it is recreated here as a labelled SVG based on the original."
@@ -2785,7 +2785,7 @@ window.SE_DATA = {
       "c",
       "d"
      ],
-     "sol": "From the above diagram a., c. and d. are the correct option.",
+     "sol": "As the diagram shows, a Window may contain multiple Frames, destroying a Window destroys its Frames, and the relationship between Window and Frame is composition.",
      "fig": "w8q3",
      "fixes": [
       "The source PDF shows a diagram referenced by this question; it is recreated here as a labelled SVG based on the original."
@@ -2795,7 +2795,7 @@ window.SE_DATA = {
      "id": "w8q4",
      "week": 8,
      "n": 4,
-     "text": "Based on the following Java code, which of the following statements are correct? \n public class Car{\n private Wheel wheels[4];\n public Car (){\n wheels[0] = new Wheel();\n wheels[1] = new Wheel();\n wheels[2] = new Wheel();\n wheels[3] = new Wheel();\n }\n }",
+     "text": "Based on the following Java code, which of the following statements are correct?\n\npublic class Car {\n  private Wheel wheels[4];\n  public Car() {\n    wheels[0] = new Wheel();\n    wheels[1] = new Wheel();\n    wheels[2] = new Wheel();\n    wheels[3] = new Wheel();\n  }\n}",
      "options": [
       {
        "k": "a",
@@ -2858,7 +2858,7 @@ window.SE_DATA = {
       "c",
       "e"
      ],
-     "sol": "Sequence diagram does not represent inheritance relationship.",
+     "sol": "A sequence diagram models interactions among objects over time; it does not represent inheritance relationships.",
      "fig": "w8q5",
      "fixes": [
       "The source PDF shows a diagram referenced by this question; it is recreated here as a labelled SVG based on the original."
@@ -2974,7 +2974,7 @@ window.SE_DATA = {
      "id": "w8q9",
      "week": 8,
      "n": 9,
-     "text": "Which one of the following statement about Controller Objects is FALSE?",
+     "text": "Which one of the following statements about Controller Objects is FALSE?",
      "options": [
       {
        "k": "a",
@@ -3014,7 +3014,7 @@ window.SE_DATA = {
      "options": [
       {
        "k": "a",
-       "t": "A composite state needs to  contain three or more nested substates"
+       "t": "A composite state needs to contain three or more nested substates"
       },
       {
        "k": "b",
@@ -3124,7 +3124,7 @@ window.SE_DATA = {
       },
       {
        "k": "b",
-       "t": "The programmer used ‘*’ instead of  ‘/’ in an arithmetic expression"
+       "t": "The programmer used ‘*’ instead of ‘/’ in an arithmetic expression"
       },
       {
        "k": "c",
@@ -3252,7 +3252,7 @@ window.SE_DATA = {
      "ans": [
       "b"
      ],
-     "sol": "The number of boundary classes depends on the actor–use case interactions shown in the diagram. So, number of boundary classes = 5",
+     "sol": "The diagram contains five use cases, and each use case is supported by one boundary class at the analysis level. Therefore, 5 boundary classes are required.",
      "fixes": [
       "Whitespace/exponent restored from PDF text extraction: 'boundary classes =5 .' -> 'boundary classes = 5'.",
       "The source PDF shows a diagram referenced by this question; it is recreated here as a labelled SVG based on the original."
@@ -3505,7 +3505,7 @@ window.SE_DATA = {
      "id": "w10q4",
      "week": 10,
      "n": 4,
-     "text": "Assume that a web-based examination system has three input fields: Subject, Difficulty Level, and Question Type. \nSubject can take 5 valid values: {Math, Physics, Chemistry, Biology, English} \nDifficulty Level can take 3 valid values: {Easy, Medium, Hard} \nQuestion Type can take 4 valid values: {MCQ, MSQ, NAT, Essay} Assuming that the interface allows only valid inputs, how many test cases are required for exhaustive functional testing?",
+     "text": "Assume that a web-based examination system has three input fields: Subject, Difficulty Level, and Question Type.\nSubject can take 5 valid values: {Math, Physics, Chemistry, Biology, English}.\nDifficulty Level can take 3 valid values: {Easy, Medium, Hard}.\nQuestion Type can take 4 valid values: {MCQ, MSQ, NAT, Essay}.\nAssuming that the interface allows only valid inputs, how many test cases are required for exhaustive functional testing?",
      "options": [
       {
        "k": "a",
@@ -3756,7 +3756,7 @@ window.SE_DATA = {
      "id": "w11q1",
      "week": 11,
      "n": 1,
-     "text": "At least how many test cases are required to achieve multiple condition coverage for the following decision? \n if ((x > 0) || (y < 10)) z = z + 1;",
+     "text": "At least how many test cases are required to achieve multiple condition coverage for the following decision?\n\nif ((x > 0) || (y < 10)) z = z + 1;",
      "options": [
       {
        "k": "a",
@@ -3899,7 +3899,7 @@ window.SE_DATA = {
      "options": [
       {
        "k": "a",
-       "t": "A rule would be if payment fails, ask to retry payment action is triggered"
+       "t": "If payment fails, the “ask to retry payment” action is triggered"
       },
       {
        "k": "b",
@@ -3923,7 +3923,7 @@ window.SE_DATA = {
       "b",
       "e"
      ],
-     "sol": "Decision tables map condition combinations to actions. Multiple rules may lead to the same action, and confirming booking requires all necessary conditions to be satisfied"
+     "sol": "Decision tables map condition combinations to actions. Multiple rules may lead to the same action, and confirming booking requires all necessary conditions to be satisfied."
     },
     {
      "id": "w11q6",
@@ -4030,7 +4030,7 @@ window.SE_DATA = {
      "id": "w11q9",
      "week": 11,
      "n": 9,
-     "text": "For the following program statement, which of the following test suites would achieve basic condition coverage? \n if (x>=5 || y<20) z++;",
+     "text": "For the following program statement, which of the following test suites would achieve basic condition coverage?\n\nif (x >= 5 || y < 20) z++;",
      "options": [
       {
        "k": "a",
@@ -4064,7 +4064,7 @@ window.SE_DATA = {
      "id": "w11q10",
      "week": 11,
      "n": 10,
-     "text": "At least how many test cases are needed for achieving decision coverage on the given C code? \n int main() {\n int x, y = 0;\n scanf(\"%d\", &x);\n if (x > 50)\n y = y + 5;\n else\n y = y + 10;\n if (x % 2 == 0)\n y = y + 20;\n else\n y = y + 30;\n }",
+     "text": "At least how many test cases are needed for achieving decision coverage on the given C code?\n\nint main() {\n  int x, y = 0;\n  scanf(\"%d\", &x);\n  if (x > 50)\n    y = y + 5;\n  else\n    y = y + 10;\n  if (x % 2 == 0)\n    y = y + 20;\n  else\n    y = y + 30;\n  return 0;\n}",
      "options": [
       {
        "k": "a",
@@ -4090,7 +4090,7 @@ window.SE_DATA = {
      "ans": [
       "b"
      ],
-     "sol": "Decision coverage requires each decision to evaluate to both True and False at least once. Two test cases are sufficient to cover all outcomes of both if statements"
+     "sol": "Decision coverage requires each decision to evaluate to both True and False at least once. Two test cases are sufficient to cover all outcomes of both if statements."
     }
    ]
   },
@@ -4130,7 +4130,7 @@ window.SE_DATA = {
       "d",
       "e"
      ],
-     "sol": "Higher cyclomatic complexity usually indicates more complex code, which may increase error probability, understanding difficulty, and debugging effort"
+     "sol": "Higher cyclomatic complexity usually indicates more complex code, which may increase error probability, understanding difficulty, and debugging effort."
     },
     {
      "id": "w12q2",
@@ -4164,7 +4164,7 @@ window.SE_DATA = {
       "b",
       "d"
      ],
-     "sol": "Statement coverage is relatively weak, while all path coverage is very strong. MC/DC is stronger than branch and condition coverage because it checks independent effect of each condition."
+     "sol": "Statement coverage is relatively weak, while all path coverage is very strong. MC/DC is stronger than branch and condition coverage because it checks the independent effect of each condition.."
     },
     {
      "id": "w12q3",
@@ -4336,7 +4336,7 @@ window.SE_DATA = {
      "id": "w12q8",
      "week": 12,
      "n": 8,
-     "text": "What would be the Cyclomatic complexity measure of the following program? \n int check(int a, int b, int c) {\n int result;\n if (a < b)\n if (a < c)\n result = a;\n else\n result = c;\n else\n if (b < c)\n result = b;\n else\n result = c;\n return result;\n }",
+     "text": "What would be the Cyclomatic complexity measure of the following program?\n\nint check(int a, int b, int c) {\n  int result;\n  if (a < b)\n    if (a < c)\n      result = a;\n    else\n      result = c;\n  else\n    if (b < c)\n      result = b;\n    else\n      result = c;\n  return result;\n}",
      "options": [
       {
        "k": "a",
@@ -4404,7 +4404,7 @@ window.SE_DATA = {
      "id": "w12q10",
      "week": 12,
      "n": 10,
-     "text": "At least how many test cases are required to achieve MC/DC coverage of the following code segment: \n if ((p > 10) && (q < 50)) y = y + 1;",
+     "text": "At least how many test cases are required to achieve MC/DC coverage of the following code segment?\n\nif ((p > 10) && (q < 50)) y = y + 1;",
      "options": [
       {
        "k": "a",
