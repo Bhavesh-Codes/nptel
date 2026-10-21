@@ -70,19 +70,35 @@ window.LearnRender = {
     } else {
       box.appendChild(mk("div", "katex-fallback", f.latex));
     }
+    /* variable glossary: symbol rendered as math, meaning beside it */
     if (f.vars && f.vars.length) {
-      const dl = mk("dl");
+      const vl = mk("div", "vlist");
       f.vars.forEach(v => {
-        dl.appendChild(mk("dt", null, v[0]));
-        dl.appendChild(mk("dd", null, v[1]));
+        const row = mk("div", "vrow");
+        const sym = mk("span", "vsym");
+        let rv = null;
+        try {
+          rv = window.katex ? window.katex.renderToString(v[0], { throwOnError: false }) : null;
+        } catch (e) { rv = null; }
+        if (rv) sym.innerHTML = rv;
+        else { const c = mk("code", null, v[0]); sym.appendChild(c); }
+        row.appendChild(sym);
+        row.appendChild(mk("span", "vmean", v[1]));
+        vl.appendChild(row);
       });
-      box.appendChild(dl);
+      box.appendChild(vl);
     }
     if (f.when) box.appendChild(mk("p", "when", "When it matters: " + f.when));
     if (f.worked) {
       const w = mk("div", "worked");
       w.innerHTML = '<span class="clabel" style="color:var(--accent)">Worked example</span>';
-      w.appendChild(mk("div", null, f.worked));
+      if (Array.isArray(f.worked)) {
+        const ul = mk("ul", "wlist");
+        f.worked.forEach(x => ul.appendChild(mk("li", null, x)));
+        w.appendChild(ul);
+      } else {
+        w.appendChild(mk("div", null, f.worked));
+      }
       box.appendChild(w);
     }
     return box;
@@ -616,11 +632,17 @@ window.LEARN_CONTENT = {
     { label: "Exhaustive test count across k partitions", latex: "N_\\text{tests} = |P_1| \\times |P_2| \\times \\cdots \\times |P_k|",
       vars: [ ["|P_i|", "number of values in partition i"], ["k", "number of independent input parameters"] ],
       when: "a function has independent inputs partitioned into classes; decide whether exhaustive testing is affordable.",
-      worked: "Web exam portal (W10Q4): 5 subjects × 3 difficulty levels × 4 question types = 60 exhaustive tests. With more parameters the product explodes — pairwise covers pairs of values and shrinks the suite massively." },
+      worked: [
+        "Web exam portal (W10Q4): 5 subjects × 3 difficulty levels × 4 question types = 60 exhaustive tests.",
+        "More parameters ⇒ the product explodes. Pairwise covers every pair of values instead of every combination — same coverage of pair interactions, a fraction of the suite.",
+      ] },
     { label: "Phase effort share", latex: "E_\\text{phase} = s \\times E_\\text{total}",
       vars: [ ["s", "share of defects/effort observed for the phase (e.g. 0.35)"], ["E_\\text{total}", "total planned effort"] ],
       when: "allocating testing effort from historical defect distributions.",
-      worked: "Unit 40% · Integration 35% · System 25% of 200 person-months ⇒ integration gets 0.35 × 200 = 70 person-months (W10Q1)." },
+      worked: [
+        "Historical defect split: Unit 40% · Integration 35% · System 25% of the 200 person-months total.",
+        "Integration gets 0.35 × 200 = 70 person-months (W10Q1).",
+      ] },
   ],
   recap: [
     "EP: one representative per valid & invalid class.",
@@ -687,7 +709,11 @@ window.LEARN_CONTENT = {
         ["T_\\text{MC/DC}", "minimum MC/DC tests — each condition proven influential"],
         ["T_\\text{rules}", "columns/rules of a full decision table"] ],
       when: "any “at least how many tests…” question on compound conditions and decision tables.",
-      worked: "n = 2 ⇒ multiple condition = 2² = 4 (W11Q1); MC/DC = 2 + 1 = 3 (W12Q10 pattern: (p>10)&&(q<50)). Basic condition coverage on if (x>=5||y<20): suite {(10,30),(2,10)} gives x = {T,F}, y = {F,T} (W11Q9). W11Q10: two sequential ifs ⇒ decision coverage with 2 cases (one per branch pattern)." },
+      worked: [
+        "n = 2 ⇒ multiple condition = 2² = 4 tests (W11Q1) and MC/DC = 2 + 1 = 3 tests (W12Q10 pattern: (p>10) && (q<50)).",
+        "Basic condition coverage on if (x>=5 || y<20): the suite {(x=10,y=30), (x=2,y=10)} gives x = {T, F} and y = {F, T} (W11Q9).",
+        "W11Q10: two sequential ifs ⇒ decision coverage with just 2 cases — one per branch pattern.",
+      ] },
   ],
   recap: [
     "Statement < branch < condition? NO: condition does not subsume branch.",
@@ -747,7 +773,11 @@ window.LEARN_CONTENT = {
         ["P", "number of connected components (1 for one program)"],
         ["\\pi", "number of predicate (decision) nodes"] ],
       when: "any “what is the V(G)/cyclomatic complexity” question, basis-path sizing, and complexity-guided refactoring.",
-      worked: "W12Q8: three nested if-else predicates ⇒ π = 3 ⇒ M = 3 + 1 = 4. No decisions at all ⇒ M = 1. Basis path testing then designs exactly 4 path tests." },
+      worked: [
+        "W12Q8: three nested if–else predicates ⇒ π = 3 ⇒ M = 3 + 1 = 4.",
+        "Straight-line code with no decisions ⇒ M = 1.",
+        "Basis path testing then designs exactly M = 4 path tests.",
+      ] },
     { label: "Mutation score",
       latex: "MS = \\frac{K}{m - e}",
       vars: [
@@ -755,7 +785,10 @@ window.LEARN_CONTENT = {
         ["m", "total generated mutants"],
         ["e", "equivalent mutants (never killable)"] ],
       when: "judging test-suite adequacy in mutation testing.",
-      worked: "100 mutants, 12 equivalent, 33 killed ⇒ MS = 33 / (100 − 12) ≈ 37.5% — add tests targeting the surviving regions, then re-measure." },
+      worked: [
+        "100 mutants generated, 12 equivalent, 33 killed by the suite.",
+        "MS = 33 / (100 − 12) ≈ 37.5% — add tests targeting the surviving regions, then re-measure.",
+      ] },
   ],
   recap: [
     "M = E − N + 2 (single program) = predicate nodes + 1 = basis-path test count.",

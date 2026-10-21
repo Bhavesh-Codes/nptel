@@ -517,12 +517,26 @@ table.compare {
   padding: 14px 16px;
 }
 .frm .kicker { margin-top: 0; }
-.frm dl { margin: 10px 0 0; font-size: .86rem; }
-.frm dt { font-weight: 700; margin-top: 7px; font-family: var(--font-mono); font-size: .8rem; }
-.frm dt code { background: none; color: var(--accent); font-weight: 700; }
-.frm dd { margin: 1px 0 0; color: var(--ink-2); }
-.frm .when { font-size: .85rem; color: var(--ink-2); margin: 9px 0 0; }
-.frm .worked { margin-top: 10px; padding-top: 9px; border-top: 1px dashed var(--line); font-size: .88rem; }
+/* variable glossary — rendered symbol | meaning, compact 2-col grid */
+.frm .vlist { margin-top: 10px; border-top: 1px dashed var(--line); }
+.frm .vrow {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 2px 14px;
+  padding: 7px 0;
+  border-bottom: 1px dashed var(--line);
+  align-items: baseline;
+}
+.frm .vrow:last-child { border-bottom: none; }
+.frm .vsym { color: var(--accent); font-weight: 700; white-space: nowrap; }
+.frm .vsym .katex { font-size: 1em; color: inherit; }
+.frm .vsym code { background: none; color: var(--accent); font-weight: 700; }
+.frm .vmean { color: var(--ink-2); font-size: .86rem; }
+.frm .when { font-size: .85rem; color: var(--ink-2); margin: 10px 0 0; }
+.frm .worked { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--line); font-size: .88rem; }
+.frm .worked .wlist { margin: 8px 0 0; padding-left: 18px; }
+.frm .worked .wlist li { margin: 5px 0; }
+.frm .worked .wlist li::marker { color: var(--accent); }
 
 /* KaTeX: blend with serif reading text; never push the page sideways */
 .katex { font-size: 1.05em; }
@@ -572,6 +586,16 @@ table.compare {
 .figcap { font-size: .73rem; color: var(--ink-2); margin: 6px 4px 0; line-height: 1.5; }
 
 /* ---------- question cards ---------- */
+.practice-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px 16px;
+  flex-wrap: wrap;
+  margin: 2px 0 12px;
+}
+.practice-head p { flex: 1 1 240px; margin: 0; }
+.practice-head .btn { flex: 0 0 auto; min-height: 36px; padding: 6px 12px; font-size: .82rem; }
 .qcard {
   background: var(--card);
   border: 1px solid var(--line);

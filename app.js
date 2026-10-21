@@ -43,7 +43,6 @@ const ICONS = {
   back: '<svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>',
   sun: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>',
   moon: '<svg viewBox="0 0 24 24"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4 8.5 8.5 0 1 0 20 14.5Z"/></svg>',
-  auto: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16Z" fill="currentColor" stroke="none"/></svg>',
   check: '<svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>',
   x: '<svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>',
   plus: '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
@@ -59,6 +58,8 @@ const ICONS = {
   pen: '<svg viewBox="0 0 24 24"><path d="M4 20h4L20 8l-4-4L4 16v4Z"/><path d="m14 6 4 4"/></svg>',
   checkSquare: '<svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="m8 12 3 3 5-6"/></svg>',
   play: '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7Z"/></svg>',
+  eye: '<svg viewBox="0 0 24 24"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/></svg>',
+  eyeOff: '<svg viewBox="0 0 24 24"><path d="m3 3 18 18"/><path d="M10.6 6.2A10 10 0 0 1 12 6c6.5 0 10 6 10 6a17 17 0 0 1-3.2 3.8"/><path d="M6.1 6.1C3.4 7.9 2 12 2 12s3.5 6 10 6a10 10 0 0 0 4.4-1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>',
   home: '<svg viewBox="0 0 24 24"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10"/></svg>',
 };
 function icon(name, cls) {
@@ -116,22 +117,20 @@ function setKeyHandler(fn) {
 }
 
 /* ------------------------------------------------------------------ *
- * 1. Theme (auto → dark → light cycle)
+ * 1. Theme (light by default; dark only when the user turns it on)
  * ------------------------------------------------------------------ */
 const THEME_KEY = "nptel-se-theme";
 function savedTheme() { try { return localStorage.getItem(THEME_KEY); } catch (e) { return null; } }
 function applyTheme(mode) {
-  document.documentElement.removeAttribute("data-theme");
-  const dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-  const resolved = mode === "auto" ? (dark ? "dark" : "light") : mode;
+  const resolved = mode === "dark" ? "dark" : "light";
   document.documentElement.setAttribute("data-theme", resolved);
   const meta = $("meta[name=theme-color]");
   if (meta) meta.setAttribute("content", resolved === "dark" ? "#0b1220" : "#faf8f5");
 }
-let themeMode = savedTheme() || "auto";
-function themeIconName() { return themeMode === "dark" ? "sun" : themeMode === "light" ? "moon" : "auto"; }
+let themeMode = savedTheme() === "dark" ? "dark" : "light";
+function themeIconName() { return themeMode === "dark" ? "sun" : "moon"; }
 function cycleTheme() {
-  themeMode = themeMode === "auto" ? "dark" : themeMode === "dark" ? "light" : "auto";
+  themeMode = themeMode === "dark" ? "light" : "dark";
   try { localStorage.setItem(THEME_KEY, themeMode); } catch (e) { /* ok */ }
   applyTheme(themeMode);
   toast("Theme: " + themeMode);
@@ -648,13 +647,15 @@ function topbar(title, sub, opts) {
   bar.appendChild(h);
   bar.appendChild(el("div", "spacer"));
   const t = el("button", "iconbtn");
-  t.setAttribute("aria-label", "Cycle theme (currently " + themeMode + ")");
-  t.setAttribute("title", "Theme: " + themeMode);
+  t.setAttribute("aria-label", "Switch to " + (themeMode === "dark" ? "light" : "dark") + " theme");
+  t.setAttribute("title", "Theme: " + themeMode + " (click for " + (themeMode === "dark" ? "light" : "dark") + ")");
   t.appendChild(icon(themeIconName()));
   t.addEventListener("click", () => {
     cycleTheme();
     t.textContent = "";
     t.appendChild(icon(themeIconName()));
+    t.setAttribute("aria-label", "Switch to " + (themeMode === "dark" ? "light" : "dark") + " theme");
+    t.setAttribute("title", "Theme: " + themeMode + " (click for " + (themeMode === "dark" ? "light" : "dark") + ")");
   });
   bar.appendChild(t);
   return bar;
@@ -843,9 +844,39 @@ function renderLearn(w, host) {
 }
 
 /* ---------------- Practice ---------------- */
+const PRACTICE_ANSWERS_KEY = "nptel-se-practice-answers";
+function savedPracticeAnswers() {
+  try {
+    const v = localStorage.getItem(PRACTICE_ANSWERS_KEY);
+    return v === null ? true : v === "1";
+  } catch (e) { return true; }
+}
+let showPracticeAnswers = savedPracticeAnswers();
+
 function renderPractice(w, host) {
-  host.appendChild(el("p", "dim small", "All 10 questions with correct options highlighted and full solutions. Nothing is scored or recorded here."));
-  WEEKS[w - 1].questions.forEach(q => host.appendChild(questionCard(q, "practice")));
+  const head = el("div", "practice-head");
+  head.appendChild(el("p", "dim small",
+    "All 10 questions. Answers and full solutions appear under each question — hide them to test yourself."));
+  const toggle = el("button", "btn");
+  toggle.type = "button";
+  const list = el("div");
+  const paint = () => {
+    const on = showPracticeAnswers;
+    toggle.textContent = "";
+    toggle.appendChild(icon(on ? "eyeOff" : "eye", "sm"));
+    toggle.appendChild(document.createTextNode(on ? "Hide answers" : "Show answers"));
+    toggle.setAttribute("aria-pressed", on ? "true" : "false");
+    list.textContent = "";
+    WEEKS[w - 1].questions.forEach(q => list.appendChild(questionCard(q, on ? "practice" : "practice-hidden")));
+  };
+  toggle.addEventListener("click", () => {
+    showPracticeAnswers = !showPracticeAnswers;
+    try { localStorage.setItem(PRACTICE_ANSWERS_KEY, showPracticeAnswers ? "1" : "0"); } catch (e) { /* ok */ }
+    paint();
+  });
+  paint();
+  head.appendChild(toggle);
+  host.append(head, list);
 }
 
 /* ---------------- Sessions (Test / week pile / mixed pile) ---------------- */
