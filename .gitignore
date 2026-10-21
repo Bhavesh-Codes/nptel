@@ -1,0 +1,23 @@
+# App deploys these at repo root: index.html, style.css, app.js, learn.js,
+# data.js, assets/ — keep generator artefacts and heavy sources out of Pages.
+
+# Source PDFs (copyrighted course material; app works entirely from data.js)
+PDFs/
+extracted/
+diagpages/
+
+# Parser / check tooling
+extract.py
+render.py
+parse.py
+check_chars.py
+
+# Test tooling (optional to publish)
+test_logic.js
+E2E.js
+smoke_serve.js
+
+# OS / editor noise
+Thumbs.db
+Desktop.ini
+.DS_Store

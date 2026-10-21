@@ -1,0 +1,37 @@
+=== PARSE VALIDATION ===
+TOTAL QUESTIONS: 120
+Week  1 [Introduction to Software Engineering]: 10 questions
+Week  2 [Software Life Cycle Models]: 10 questions
+Week  3 [Agile Development: Scrum & XP]: 10 questions
+Week  4 [Software Requirements & SRS]: 10 questions
+Week  5 [Software Design: Cohesion & Coupling]: 10 questions
+Week  6 [Function-Oriented Design: DFDs & Structured Analysis]: 10 questions
+Week  7 [Object-Oriented Analysis & UML Modelling]: 10 questions
+Week  8 [OO Design: Class Relationships & Analysis Objects]: 10 questions
+Week  9 [Software Testing Fundamentals]: 10 questions
+Week 10 [Black-Box Testing Techniques]: 10 questions
+Week 11 [White-Box Coverage & Combinatorial Testing]: 10 questions
+Week 12 [Advanced Testing: Cyclomatic Complexity & Mutation]: 10 questions
+MCQ (single answer): 18
+MSQ (multi answer):  102
+POST-EDIT VALIDATION: ALL CLEAN
+
+=== FLAGS ===
+- w5q3: SOURCE answer key 'e.' text does not match option 'e' (ratio 0.44) but matches option 'f' (ratio 1.00) -> corrected to 'f' | entry: 'Cohesion is concerned with the internal organization of a module'
+- w4q1: removed stray artifact option 'g.' (a dangling question fragment in the source PDF, not real content and never in the answer key)
+- w7q1: source had EMPTY solution; repaired from the misplaced text inside w7q2's solution block (flagged, not guessed)
+- w7q2: solution split; trailing UML sentences moved to w7q1 (source layout error)
+- w10q8: repaired spacing 'combinations are 23 = 8' -> 'combinations are 2³ = 8'
+- w11q1: repaired spacing 'conditions, 22 = 4' -> 'conditions, 2² = 4'
+- w10q1: repaired spacing '70person-months' -> '70 person-months'
+- w10q4: repaired spacing '60test cases' -> '60 test cases'
+- w11q3: repaired spacing 'tinput parameters' -> 't input parameters'
+- w11q3: repaired spacing 'tparameter values' -> 't parameter values'
+- w9q6: repaired spacing 'boundary classes =5 .' -> 'boundary classes = 5'
+- w12q8: repaired spacing 'complexity = 3+ 1= 4' -> 'complexity = 3 + 1 = 4'
+- figures attached (recreated as SVG from the PDF images): w7q4, w7q5, w8q1, w8q2, w8q3, w8q5, w9q6
+- w3q3: source solution is a copy-paste leftover (software-entropy text); corrected explanation appended and marked in-app
+- dump_review.txt refreshed post-edit
+
+=== PROBLEMS ===
+! (none)
