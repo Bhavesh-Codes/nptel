@@ -13,12 +13,9 @@
   --sal: env(safe-area-inset-left, 0px);
   --sar: env(safe-area-inset-right, 0px);
 
-  --font-ui: "Plus Jakarta Sans", "Geist", "Inter", "Segoe UI Variable Text",
-             "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, Arial, sans-serif;
-  --font-serif: "Source Serif 4", "Source Serif Pro", "Charter", "Iowan Old Style",
-                "Palatino Linotype", Georgia, "Times New Roman", serif;
-  --font-mono: "Geist Mono", "JetBrains Mono", "Cascadia Mono", Consolas,
-               "SFMono-Regular", "Liberation Mono", monospace;
+  --font-ui: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-serif: Georgia, "Times New Roman", Times, serif;
+  --font-mono: ui-monospace, "Cascadia Mono", Consolas, "SFMono-Regular", Menlo, monospace;
 }
 
 html[data-theme="light"], html:not([data-theme]) {
@@ -105,6 +102,8 @@ a { color: var(--accent); text-underline-offset: 3px; }
 h1 { font-size: 1.45rem; line-height: 1.25; letter-spacing: -0.015em; margin: 4px 0; }
 h2 { font-size: 1.08rem; line-height: 1.35; letter-spacing: -0.01em; margin: 25px 0 10px; }
 h3 { font-size: 1rem; margin: 0; }
+h2.withicon { display: flex; align-items: center; gap: 8px; }
+h2.withicon .icon { color: var(--ink-2); }
 
 .kicker {
   color: var(--ink-2);
@@ -276,6 +275,7 @@ h3 { font-size: 1rem; margin: 0; }
   border-color: color-mix(in srgb, var(--accent) 32%, var(--line));
   color: var(--accent);
 }
+.chip .icon { width: 15px; height: 15px; }
 .chip .n {
   border: 1px solid currentColor;
   border-radius: 3px;
@@ -302,6 +302,8 @@ h3 { font-size: 1rem; margin: 0; }
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
 }
+.stat-top { display: flex; align-items: center; gap: 6px; }
+.stat-top .icon { color: var(--ink-3); width: 16px; height: 16px; }
 .stat span { font-size: .7rem; color: var(--ink-2); letter-spacing: .04em; text-transform: uppercase; }
 
 .bar {
@@ -345,12 +347,16 @@ h3 { font-size: 1rem; margin: 0; }
 }
 .tile:hover { border-color: var(--accent); }
 .tile .wnum {
+  display: flex;
+  align-items: center;
+  gap: 5px;
   font-family: var(--font-mono);
   font-size: .67rem;
   font-weight: 600;
   color: var(--accent);
   letter-spacing: .08em;
 }
+.tile .wnum .icon { width: 13px; height: 13px; }
 .tile .ttitle {
   font-weight: 600;
   font-size: .85rem;
@@ -532,15 +538,26 @@ table.compare {
 
 /* figures */
 .figwrap {
-  margin: 12px 0 6px;
+  display: block;
+  margin: 4px 0 16px;
   background: var(--bg-soft);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
-  padding: 12px 10px 8px;
+  padding: 14px 12px 9px;
   overflow-x: auto;
   color: var(--fig);
 }
 .figwrap svg { display: block; width: 100%; height: auto; max-height: 430px; }
+.figlabel {
+  display: block;
+  font-family: var(--font-ui);
+  font-size: .62rem;
+  font-weight: 700;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin: 0 2px 8px;
+}
 .figwrap .nd, .figwrap .ov, .figwrap .ls, .figwrap .ld, .figwrap .af, .figwrap .hg, .figwrap .hf, .figwrap .act {
   fill: none;
   stroke: currentColor;

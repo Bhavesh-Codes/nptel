@@ -19,7 +19,9 @@ WEEKS.forEach(w => w.questions.forEach(q => { QMAP[q.id] = q; }));
 function el(tag, cls, text) {
   const e = document.createElement(tag);
   if (cls) e.className = cls;
-  if (text !== undefined && text !== null && text !== "") e.textContent = text;
+  if (Array.isArray(text)) text.forEach(t => { if (t) e.appendChild(t); });
+  else if (text && text.nodeType) e.appendChild(text);
+  else if (text !== undefined && text !== null && text !== "") e.textContent = text;
   return e;
 }
 function frag(children) {
@@ -48,12 +50,34 @@ const ICONS = {
   lock: '<svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>',
   book: '<svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg>',
   next: '<svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>',
+  checkCircle: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg>',
+  clock: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+  alert: '<svg viewBox="0 0 24 24"><path d="M12 4 3 20h18L12 4Z"/><path d="M12 10v4M12 17h.01"/></svg>',
+  layers: '<svg viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/></svg>',
+  grid: '<svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/></svg>',
+  trend: '<svg viewBox="0 0 24 24"><path d="m3 17 6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>',
+  pen: '<svg viewBox="0 0 24 24"><path d="M4 20h4L20 8l-4-4L4 16v4Z"/><path d="m14 6 4 4"/></svg>',
+  checkSquare: '<svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="m8 12 3 3 5-6"/></svg>',
+  play: '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7Z"/></svg>',
+  home: '<svg viewBox="0 0 24 24"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10"/></svg>',
 };
 function icon(name, cls) {
   const s = el("span", "icon" + (cls ? " " + cls : ""));
   s.setAttribute("aria-hidden", "true");
   s.innerHTML = ICONS[name] || "";
   return s;
+}
+function heading(text, iconName) {
+  const h = el("h2", "withicon");
+  if (iconName) h.appendChild(icon(iconName, "sm"));
+  h.appendChild(document.createTextNode(text));
+  return h;
+}
+function iconText(tag, cls, iconName, label) {
+  const node = el(tag, cls);
+  node.appendChild(icon(iconName, "sm"));
+  node.appendChild(document.createTextNode(label));
+  return node;
 }
 
 /* Render question/solution text: prose keeps its line breaks, code becomes a <pre>. */
@@ -229,8 +253,11 @@ function box(x, y, w, h, label, cls) {
     `<text x="${x + w / 2}" y="${y + h / 2 + 4}" text-anchor="middle" class="tx">${label}</text>`;
 }
 function oval(cx, cy, rx, ry, lines) {
-  const tspans = (lines || []).map((l, i) =>
-    `<tspan x="${cx}" dy="${i === 0 ? (1 - (lines.length - 1) * 1.1) * ry / 2 + ry / 2 - 2 : 13}" text-anchor="middle">${l}</tspan>`).join("");
+  const ls = lines || [];
+  const lh = 13;
+  const top = cy + 4 - ((ls.length - 1) * lh) / 2;
+  const tspans = ls.map((l, i) =>
+    `<tspan x="${cx}" y="${top + i * lh}" text-anchor="middle">${l}</tspan>`).join("");
   return `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" class="ov"/>` +
     `<text class="tx">${tspans}</text>`;
 }
@@ -364,11 +391,14 @@ const FIGCAPTIONS = {
 function figureFor(qid) {
   const b = FIGBUILDERS[qid];
   if (!b) return null;
-  const wrap = el("div", "figwrap");
+  const wrap = el("figure", "figwrap");
+  wrap.setAttribute("aria-label", "Diagram for this question");
+  wrap.appendChild(el("span", "figlabel", "Diagram"));
   const holder = document.createElement("div");
   holder.innerHTML = b(); /* trusted static SVG built above */
   while (holder.firstChild) wrap.appendChild(holder.firstChild);
-  wrap.appendChild(el("div", "figcap", FIGCAPTIONS[qid] || "Recreated as an SVG from the diagram in the source PDF."));
+  const cap = el("figcaption", "figcap", FIGCAPTIONS[qid] || "Recreated as an SVG from the diagram in the source PDF.");
+  wrap.appendChild(cap);
   return wrap;
 }
 
@@ -435,6 +465,9 @@ function questionCard(q, mode, ctx) {
   appendRichText(qtext, q.text);
   card.appendChild(qtext);
 
+  /* Diagram belongs with the stem, above the options: questions say "shown below". */
+  if (q.fig) { const f = figureFor(q.fig); if (f) card.appendChild(f); }
+
   const picked = (ctx.picked || []).slice();
   const single = q.ans.length === 1;
   const stack = el("div", "opts");
@@ -495,8 +528,6 @@ function questionCard(q, mode, ctx) {
     });
   }
   card.appendChild(stack);
-
-  if (q.fig) { const f = figureFor(q.fig); if (f) card.appendChild(f); }
 
   if (mode === "practice") {
     slot.appendChild(solutionBox(q));
@@ -650,12 +681,17 @@ function renderHome() {
   const homeTop = el("div", "home-top");
 
   const hero = el("section", "card");
-  hero.appendChild(el("h2", null, "Your progress"));
+  hero.appendChild(heading("Your progress", "trend"));
   const sg = el("div", "statgrid");
-  [[st.mastered + "/120", "mastered"], [st.attempted, "attempted"], [st.weak, "in weak pile"]]
-    .forEach(([v, l]) => {
+  [["checkCircle", st.mastered + "/120", "mastered"],
+   ["clock", st.attempted, "attempted"],
+   ["alert", st.weak, "in weak pile"]]
+    .forEach(([ic, v, l]) => {
       const s = el("div", "stat");
-      s.appendChild(el("b", null, String(v)));
+      const top = el("div", "stat-top");
+      top.appendChild(icon(ic, "sm"));
+      top.appendChild(el("b", null, String(v)));
+      s.appendChild(top);
       s.appendChild(el("span", null, l));
       sg.appendChild(s);
     });
@@ -667,8 +703,10 @@ function renderHome() {
   homeTop.appendChild(hero);
 
   const wp = el("section", "card");
-  wp.appendChild(el("h2", null, "Weak pile"));
-  const btn = el("button", "btn primary big", st.weak > 20 ? `Weak pile (${st.weak}) — round of 20` : `Weak pile (${st.weak})`);
+  wp.appendChild(heading("Weak pile", "layers"));
+  const btn = el("button", "btn primary big");
+  btn.appendChild(icon("layers", "sm"));
+  btn.appendChild(document.createTextNode(st.weak > 20 ? `Weak pile (${st.weak}) — round of 20` : `Weak pile (${st.weak})`));
   btn.disabled = st.weak === 0;
   btn.addEventListener("click", () => {
     mixedSession = makeSession(mixedPile().slice(0, 20), "mixed");
@@ -681,7 +719,7 @@ function renderHome() {
   homeTop.appendChild(wp);
   APP.appendChild(homeTop);
 
-  APP.appendChild(el("h2", null, "Weeks"));
+  APP.appendChild(heading("Weeks", "grid"));
   const legend = el("div", "legend");
   legend.innerHTML =
     '<span><i style="background:var(--ok)"></i>mastered</span>' +
@@ -699,7 +737,10 @@ function renderHome() {
     const dot = el("span", "dot");
     dot.style.background = !weekAttempted(wk.num) ? "var(--lv0)" : strg === 100 ? "var(--ok)" : strg >= 60 ? "var(--warn)" : "var(--bad)";
     tile.appendChild(dot);
-    tile.appendChild(el("div", "wnum", "WEEK " + wk.num));
+    const wn = el("div", "wnum");
+    wn.appendChild(icon("book", "sm"));
+    wn.appendChild(document.createTextNode("WEEK " + wk.num));
+    tile.appendChild(wn);
     tile.appendChild(el("div", "ttitle", wk.title));
     const tb = el("div", "tbar");
     wk.questions.forEach(q => {
@@ -712,7 +753,7 @@ function renderHome() {
     tile.appendChild(tb);
     tile.appendChild(el("div", "tmeta", [
       el("span", null, "Strength " + strg + "%"),
-      el("span", null, weakCount ? weakCount + " weak" : "—"),
+      el("span", null, weakCount + " weak"),
     ]));
     grid.appendChild(tile);
   });
@@ -724,7 +765,7 @@ function renderHome() {
     .sort((a, b) => (a.att === b.att) ? (a.strg - b.strg) || (b.weak - a.weak) : (a.att ? -1 : 1));
   const top3 = ranked.slice(0, 3);
   if (top3.some(r => r.att && r.strg < 100)) {
-    APP.appendChild(el("h2", null, "Weakest weeks"));
+    APP.appendChild(heading("Weakest weeks", "alert"));
     const list = el("div", "card flush");
     top3.forEach(r => {
       const row = el("a");
@@ -735,6 +776,7 @@ function renderHome() {
       row.appendChild(el("span", "small", r.wk.title));
       const sp = el("span"); sp.style.flex = "1"; row.appendChild(sp);
       row.appendChild(el("span", "small dim", r.att ? r.strg + "% · " + r.weak + " weak" : "not attempted yet"));
+      row.appendChild(icon("next", "sm"));
       list.appendChild(row);
     });
     APP.appendChild(list);
@@ -772,9 +814,11 @@ function renderWeek(w, panel) {
 
   const chips = el("nav", "chips");
   const weakCount = weekPile(w).length;
-  [["learn", "Learn"], ["practice", "Practice"], ["test", "Test"], ["pile", "Weak pile"]]
-    .forEach(([k, label]) => {
-      const c = el("a", "chip" + (panel === k ? " active" : ""), label);
+  [["learn", "Learn", "book"], ["practice", "Practice", "pen"], ["test", "Test", "checkSquare"], ["pile", "Weak pile", "layers"]]
+    .forEach(([k, label, ic]) => {
+      const c = el("a", "chip" + (panel === k ? " active" : ""));
+      c.appendChild(icon(ic, "sm"));
+      c.appendChild(document.createTextNode(label));
       if (k === "pile" && weakCount) c.appendChild(el("span", "n", String(weakCount)));
       c.href = "#/week/" + w + "/" + k;
       chips.appendChild(c);
@@ -871,7 +915,7 @@ function renderSessionStep(host, sess, opts) {
     host.appendChild(card);
 
     const bar = actionsBar();
-    submitBtn = el("button", "btn primary", "Submit");
+    submitBtn = iconText("button", "btn primary", "check", "Submit");
     submitBtn.disabled = sess.picked.length === 0;
     bar.append(submitBtn, keyHint());
 
@@ -956,7 +1000,7 @@ function resultsSection(w, data) {
       detail.textContent = "";
       detail.appendChild(el("p", "kicker dim", "Review: " + q.id.toUpperCase() + " as you answered it"));
       detail.appendChild(questionCard(q, "answered", { picked: r.picked, graded: { cat: r.cat, score: r.cat === "perfect" ? 1 : 0 } }));
-      const back = el("button", "btn", "Back to result summary");
+      const back = iconText("button", "btn", "back", "Back to result summary");
       back.addEventListener("click", () => { detail.textContent = ""; window.scrollTo(0, 0); });
       detail.appendChild(back);
       detail.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -973,15 +1017,15 @@ function resultsSection(w, data) {
     ? pile + " question" + (pile === 1 ? "" : "s") + " from this week are in your weak pile (levels 1–2). Play the pile, push them to level 3, then retake the test to chase 10/10."
     : "Weak pile empty for this week. Retake the test to re-challenge mastered questions — Almost/Perfect raises their level again."));
   const row = el("div"); row.style.cssText = "display:flex;gap:10px;flex-wrap:wrap";
-  const bp = el("a", "btn primary", "Weak pile (" + pile + ")");
+  const bp = iconText("a", "btn primary", "layers", "Weak pile (" + pile + ")");
   bp.href = "#/week/" + w + "/pile";
   if (!pile) { bp.setAttribute("aria-disabled", "true"); bp.classList.add("hidden"); }
-  const bt = el("button", "btn", "Retake test");
+  const bt = iconText("button", "btn", "play", "Retake test");
   bt.addEventListener("click", () => {
     wsessions["test" + w] = makeSession(WEEKS[w - 1].questions.map(q => q.id), "test", w);
     route();
   });
-  const bl = el("a", "btn", "Home"); bl.href = "#/";
+  const bl = iconText("a", "btn", "home", "Home"); bl.href = "#/";
   row.append(bp, bt, bl);
   whatNext.appendChild(row);
   sec.appendChild(whatNext);
@@ -998,7 +1042,7 @@ function renderTest(w, host) {
   const c = el("section", "card");
   c.appendChild(el("p", "dim small",
     "10 questions, one at a time. Multi-select answers must include every correct option, exactly like the real assignments — but scoring is strict: 1 mark only for a Perfect answer."));
-  const b = el("button", "btn primary big", state.testTaken[w] ? "Retake test" : "Start test");
+  const b = iconText("button", "btn primary big", "play", state.testTaken[w] ? "Retake test" : "Start test");
   b.addEventListener("click", () => {
     wsessions["test" + w] = makeSession(WEEKS[w - 1].questions.map(q => q.id), "test", w);
     route();
@@ -1029,23 +1073,23 @@ function renderWeekPile(w, host) {
   if (sess) { renderSessionStep(host, sess, { onFinish: () => finishWeekPile(w, host, sess) }); return; }
 
   if (!state.testTaken[w]) {
-    host.appendChild(el("h2", null, "Weak pile"));
+    host.appendChild(heading("Weak pile", "layers"));
     const c = el("section", "card lockbox");
     c.appendChild(icon("lock", "lg state-icon"));
     c.appendChild(el("p", "dim", "This week's weak pile opens after you take the Week " + w + " Test — it is built from the questions you slip on."));
-    const b = el("a", "btn primary big", "Take the test"); b.href = "#/week/" + w + "/test";
+    const b = iconText("a", "btn primary big", "play", "Take the test"); b.href = "#/week/" + w + "/test";
     c.appendChild(b);
     host.appendChild(c);
     return;
   }
-  host.appendChild(el("h2", null, "Weak pile"));
+  host.appendChild(heading("Weak pile", "layers"));
   const pile = weekPile(w);
   if (!pile.length) {
     const c = el("section", "card emptybox");
     c.appendChild(icon("book", "lg state-icon"));
     c.appendChild(el("b", null, "Nothing weak right now"));
     c.appendChild(el("p", "dim small", "Every attempted question here is at level 3. Retake the test to re-challenge them — misses re-enter the pile."));
-    const b = el("a", "btn primary big", "Retake test"); b.href = "#/week/" + w + "/test";
+    const b = iconText("a", "btn primary big", "play", "Retake test"); b.href = "#/week/" + w + "/test";
     c.appendChild(b);
     host.appendChild(c);
     return;
@@ -1054,7 +1098,7 @@ function renderWeekPile(w, host) {
   const c = el("section", "card");
   c.appendChild(el("h2", null, pile.length + " weak questions"));
   c.appendChild(el("p", "dim small", lv1 + " at level 1 · " + (pile.length - lv1) + " at level 2. Level 1 first, least recently seen next. Answering moves levels; retaking the test recalculates the pile."));
-  const b = el("button", "btn primary big", "Start weak pile session");
+  const b = iconText("button", "btn primary big", "play", "Start weak pile session");
   b.addEventListener("click", () => {
     wsessions["wpile" + w] = makeSession(pile, "wpile", w);
     route();
@@ -1079,9 +1123,9 @@ function finishWeekPile(w, host, sess) {
   sessionFinals(sess).forEach(r => strip.appendChild(el("i", "s-" + (r.cat === "perfect" ? "good" : r.cat === "almost" ? "mid" : "bad"))));
   c.appendChild(strip);
   c.appendChild(el("p", "dim small", "The pile recalculates instantly: improved questions moved up or out; any new misses join."));
-  const b = el("a", "btn primary big", "Retake test to push levels up"); b.href = "#/week/" + w + "/test";
+  const b = iconText("a", "btn primary big", "play", "Retake test to push levels up"); b.href = "#/week/" + w + "/test";
   c.appendChild(b);
-  const b2 = el("a", "btn", "Back to result"); b2.href = "#/week/" + w + "/test";
+  const b2 = iconText("a", "btn", "back", "Back to result"); b2.href = "#/week/" + w + "/test";
   c.appendChild(b2);
   host.appendChild(c);
 }
@@ -1098,7 +1142,7 @@ function renderMixedPile() {
     c.appendChild(icon("book", "lg state-icon"));
     c.appendChild(el("b", null, "Weak pile is empty"));
     c.appendChild(el("p", "dim small", "Take a week Test first — questions you slip on land here."));
-    c.appendChild(Object.assign(el("a", "btn primary big", "Home"), { href: "#/" }));
+    c.appendChild(Object.assign(iconText("a", "btn primary big", "home", "Home"), { href: "#/" }));
     host.appendChild(c);
     mixedSession = null;
     return;
@@ -1125,12 +1169,12 @@ function finishMixed(host, sess) {
     ? left + " question" + (left === 1 ? "" : "s") + " still weak across all weeks. The next round picks level-1 and least-recently-seen first."
     : "Nothing weak anywhere — retake week tests to keep challenging mastered questions."));
   const row = el("div"); row.style.cssText = "display:flex;gap:10px;flex-wrap:wrap";
-  const again = el("button", "btn primary", left ? "New round" : "Back home");
+  const again = iconText("button", "btn primary", left ? "next" : "home", left ? "New round" : "Back home");
   again.addEventListener("click", () => {
     if (left) { mixedSession = makeSession(mixedPile().slice(0, 20), "mixed"); route(); }
     else go("#/");
   });
-  const home = el("a", "btn", "Home"); home.href = "#/";
+  const home = iconText("a", "btn", "home", "Home"); home.href = "#/";
   row.append(again, home);
   c.appendChild(row);
   host.appendChild(c);
