@@ -2,7 +2,7 @@
 
 A mobile-first, offline-capable study app for the **NPTEL Software Engineering** course (2026): all **12 weeks × 10 = 120** assignment questions, parsed and validated from the course PDFs, with Learn cards, practice, strict self-tests, and a self-updating **weak pile**.
 
-Everything is static — plain HTML/CSS/JS with no build step and no backend — so it runs from GitHub Pages (or any static folder), including offline after first load.
+Everything is static — plain HTML/CSS/JS with no build step and no backend — so it runs from any static folder, including offline after first load.
 
 ## Features
 
@@ -14,44 +14,12 @@ Everything is static — plain HTML/CSS/JS with no build step and no backend —
   - **Weak pile** — locked until the week's test is taken; contains your levels 1–2 questions, level 1 first, LRU ordered; updates live as you answer and on every retake.
 - **Grading buckets** — *Perfect* (exact match, 1 mark), *Almost* (right options only but some missed), *Wrong pick* (≥1 wrong option, right ≥ wrong), *Way off* (re-queued **once** at the end of the session). A mastered question that slips re-enters the weak pile; a perfect answer only ever pushes levels up (max 3).
 - **Trip tracking** — the app remembers which options you keep wrongly picking or keep missing and tells you (“you keep missing option c”).
-- **Backup** — export progress as a JSON file and import it on another device (e.g. laptop → phone via the same GitHub Pages link); import is validated and sanitised before it replaces local state.
+- **Per-question reveal** — the global Show/Hide answers switch is joined by a small *Show answer / Hide answer* button in each Practice card's header, so you can reveal a single question while the rest stay hidden.
+- **Option shuffling in weak piles & tests** — a *Shuffle options* strip on the weak-pile and Test screens randomises the a/b/c/d order per question (fixed per session, practice untouched), so you learn the content instead of the letter positions. Piles default to On; tests default to Off to mirror the real assignment.
+- **Backup** — export progress as a JSON file and import it on another device (e.g. laptop → phone via the same static link); import is validated and sanitised before it replaces local state.
 - **Learn pages** with genuine diagrams: use-case `«include»`/`«extend»` recreations, class diagrams with multiplicities, composition diamonds, a sequence diagram, and the course-management use-case diagram.
 - **Keyboard-first answering** — `1`–`9` or `A`–`Z` selects an option, `Enter` submits, and `Enter` / `Space` / `→` advances after feedback. Option rows show their shortcut badges.
 - **Responsive by design** — a single flat academic visual system: warm paper, navy ink, 1px rules, six-pixel corners, serif questions and sans-serif UI text. No gradients, glow or motion; safe-area insets and ≥44 px tap targets on phones.
-
-## Running locally
-
-Just serve the folder (any static server) and open the page:
-
-```bash
-python -m http.server 8000
-# → http://localhost:8000/
-```
-
-Opening `index.html` directly from disk also works (no `fetch` is used; scripts are classic `<script src>` tags).
-
-## Deploying to GitHub Pages
-
-1. Create a new repository on GitHub (e.g. `nptel-se-study`).
-2. Push this folder's **deployable files** to the default branch:
-
-   ```bash
-   git init
-   git add index.html style.css app.js learn.js data.js README.md assets/
-   git commit -m "NPTEL SE study app"
-   git branch -M main
-   git remote add origin https://github.com/<your-username>/<repo-name>.git
-   git push -u origin main
-   ```
-
-3. Repository → **Settings → Pages → Build and deployment** → Source: *Deploy from a branch* → Branch: `main` / `/ (root)` → Save.
-4. The site appears at `https://<your-username>.github.io/<repo-name>/` within a few minutes.
-
-All paths are relative, so it works both at the domain root (user page) and in a sub-path (project page). No fetch/XHR is used, no build step, nothing to configure.
-
-### Optional: keep the generator out of the repo
-
-The `parse.py` pipeline (plus `extract.py`, `render.py`, `extracted/`, `diagpages/`, `check_chars.py`) is only needed to regenerate `data.js` from the PDFs. You can exclude them via `.gitignore` if you prefer — the app only needs `index.html`, `style.css`, `app.js`, `learn.js`, `data.js` and `assets/`.
 
 ## Editing the week titles
 
@@ -66,7 +34,7 @@ Week titles live in one config object: `window.SE_DATA.titles` at the top of [`d
 
 ## Progress storage
 
-State is saved in `localStorage` under the versioned key **`nptel-se-study:v1`** (theme under `nptel-se-theme`), wrapped in try/catch with an in-memory fallback if storage is unavailable. Progress per question: level 0–3, attempt count, last-seen time, last result, and per-option wrong/missed counters.
+State is saved in `localStorage` under the versioned key **`nptel-se-study:v1`** (theme in `nptel-se-theme`, practice switch in `nptel-se-practice-answers`, pile shuffle in `nptel-se-pile-shuffle`, test shuffle in `nptel-se-test-shuffle`), wrapped in try/catch with an in-memory fallback if storage is unavailable. Progress per question: level 0–3, attempt count, last-seen time, last result, and per-option wrong/missed counters.
 
 To wipe everything and start over, Home has a **Reset → “Clear progress & start fresh”** card with a two-tap confirmation (armed for 5 seconds): the first tap asks, the second tap deletes the versioned storage key, clears in-memory sessions and re-renders. Your theme preference is kept.
 

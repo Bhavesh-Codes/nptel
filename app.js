@@ -60,6 +60,7 @@ const ICONS = {
   play: '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7Z"/></svg>',
   eye: '<svg viewBox="0 0 24 24"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/></svg>',
   eyeOff: '<svg viewBox="0 0 24 24"><path d="m3 3 18 18"/><path d="M10.6 6.2A10 10 0 0 1 12 6c6.5 0 10 6 10 6a17 17 0 0 1-3.2 3.8"/><path d="M6.1 6.1C3.4 7.9 2 12 2 12s3.5 6 10 6a10 10 0 0 0 4.4-1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>',
+  shuffle: '<svg viewBox="0 0 24 24"><path d="M16 3h5v5"/><path d="M4 20 21 3"/><path d="M21 16v5h-5"/><path d="m15 15 6 6"/><path d="M4 4l5 5"/></svg>',
   home: '<svg viewBox="0 0 24 24"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10"/></svg>',
 };
 function icon(name, cls) {
@@ -602,6 +603,8 @@ function questionCard(q, mode, ctx) {
 
   if (mode === "ask") {
     const selected = new Set(picked);
+    const ordered = (ctx.order || q.options.map(o => o.k)).map(k => q.options.find(o => o.k === k));
+    card.__keys = ordered.map(o => o.k);
     const sync = notify => {
       rows.forEach(row => {
         const on = selected.has(row.dataset.key);
@@ -617,7 +620,7 @@ function questionCard(q, mode, ctx) {
       else selected.add(key);
       sync(true);
     };
-    q.options.forEach((o, i) => {
+    ordered.forEach((o, i) => {
       const row = optRow(q, o, {
         interactive: true,
         single,
@@ -638,7 +641,8 @@ function questionCard(q, mode, ctx) {
     card.__picked = () => Array.from(selected);
     card.__sync = () => sync(false);
   } else {
-    q.options.forEach(o => {
+    const ordered = (ctx.order || null) ? ctx.order.map(k => q.options.find(o => o.k === k)) : q.options;
+    ordered.forEach(o => {
       let cls = "", mark = "";
       const isC = q.ans.includes(o.k), isP = picked.includes(o.k);
       if (mode === "practice") {
@@ -666,6 +670,26 @@ function questionCard(q, mode, ctx) {
     slot.appendChild(solutionBox(q));
   }
   card.appendChild(slot);
+
+  /* practice modes get a per-question local show/hide toggle, pinned to the
+     card head so revealing never pushes the button (or the page) around */
+  if (mode === "practice" || mode === "practice-hidden") {
+    const shown = mode === "practice";
+    const local = iconText("button", "btn sm qtoggle", shown ? "eyeOff" : "eye",
+      shown ? "Hide answer" : "Show answer");
+    local.type = "button";
+    local.setAttribute("aria-pressed", shown ? "true" : "false");
+    local.addEventListener("click", () => {
+      practiceOverride[q.id] = !shown;
+      const parent = card.parentNode;
+      if (!parent) return;
+      const fresh = questionCard(q, shown ? "practice-hidden" : "practice");
+      parent.replaceChild(fresh, card);
+      const nb = $(".qtoggle", fresh);
+      if (nb && nb.focus) nb.focus({ preventScroll: true });
+    });
+    head.appendChild(local);
+  }
   return card;
 }
 
@@ -1049,6 +1073,7 @@ function renderLearn(w, host) {
 
 /* ---------------- Practice ---------------- */
 const PRACTICE_ANSWERS_KEY = "nptel-se-practice-answers";
+const practiceOverride = {}; /* per-question local show/hide (qid → bool) */
 function savedPracticeAnswers() {
   try {
     const v = localStorage.getItem(PRACTICE_ANSWERS_KEY);
@@ -1071,10 +1096,14 @@ function renderPractice(w, host) {
     toggle.appendChild(document.createTextNode(on ? "Hide answers" : "Show answers"));
     toggle.setAttribute("aria-pressed", on ? "true" : "false");
     list.textContent = "";
-    WEEKS[w - 1].questions.forEach(q => list.appendChild(questionCard(q, on ? "practice" : "practice-hidden")));
+    WEEKS[w - 1].questions.forEach(q => {
+      const shown = (q.id in practiceOverride) ? practiceOverride[q.id] : on;
+      list.appendChild(questionCard(q, shown ? "practice" : "practice-hidden"));
+    });
   };
   toggle.addEventListener("click", () => {
     showPracticeAnswers = !showPracticeAnswers;
+    Object.keys(practiceOverride).forEach(k => { delete practiceOverride[k]; });
     try { localStorage.setItem(PRACTICE_ANSWERS_KEY, showPracticeAnswers ? "1" : "0"); } catch (e) { /* ok */ }
     paint();
   });
@@ -1086,7 +1115,70 @@ function renderPractice(w, host) {
 /* ---------------- Sessions (Test / week pile / mixed pile) ---------------- */
 function makeSession(qids, kind, week) {
   return { kind, week: week || null, queue: qids.slice(), i: 0, step: "ask",
-           picked: [], graded: null, requeued: {}, results: [] };
+           picked: [], graded: null, requeued: {}, results: [], order: {} };
+}
+
+/* Option shuffling: randomise a/b/c/d positions per question so you can't
+   memorise letters. Two independent switches — weak piles (default on) and
+   tests (default off to mirror the real assignment). Practice never shuffles. */
+const SHUFFLE_KEY = "nptel-se-pile-shuffle";
+const TEST_SHUFFLE_KEY = "nptel-se-test-shuffle";
+function shuffleSwitch(key, fallback) {
+  try {
+    const v = localStorage.getItem(key);
+    return v === null ? fallback : v !== "0";
+  } catch (e) { return fallback; }
+}
+function setShuffle(key, on) {
+  try { localStorage.setItem(key, on ? "1" : "0"); } catch (e) { /* ok */ }
+}
+function pileShuffleOn() { return shuffleSwitch(SHUFFLE_KEY, true); }
+function testShuffleOn() { return shuffleSwitch(TEST_SHUFFLE_KEY, false); }
+function shuffleOnFor(kind) { return kind === "test" ? testShuffleOn() : pileShuffleOn(); }
+function shuffleStrip(kind) {
+  const isTest = kind === "test";
+  const key = isTest ? TEST_SHUFFLE_KEY : SHUFFLE_KEY;
+  const strip = el("div", "shuffrow");
+  const txt = el("div", "shuftext");
+  txt.appendChild(el("b", null, "Shuffle options"));
+  txt.appendChild(el("span", null, isTest
+    ? "Randomise the a/b/c/d order in this test — same questions, scrambled positions. Off by default to mirror the real assignment."
+    : "Randomise the a/b/c/d order in weak piles so you can't memorise positions. Practice keeps the original order."));
+  const b = iconText("button", "btn sm", "shuffle", "On");
+  b.type = "button";
+  const paint = () => {
+    const on = shuffleSwitch(key, isTest ? false : true);
+    b.textContent = "";
+    b.appendChild(icon("shuffle", "sm"));
+    b.appendChild(document.createTextNode(on ? "On" : "Off"));
+    b.setAttribute("aria-pressed", on ? "true" : "false");
+  };
+  b.addEventListener("click", () => {
+    const was = shuffleSwitch(key, isTest ? false : true);
+    setShuffle(key, !was);
+    paint();
+    toast(was ? "Shuffle off — next question keeps the original order" : "Shuffle on — applies from the next question");
+  });
+  paint();
+  strip.append(txt, b);
+  return strip;
+}
+function shuffleOrder(q) {
+  const keys = q.options.map(o => o.k);
+  for (let i = keys.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const t = keys[i]; keys[i] = keys[j]; keys[j] = t;
+  }
+  return keys;
+}
+/* visual option order for a session question; fixed per qid for the whole session */
+function sessionOrder(sess, q) {
+  if (sess.order[q.id]) return sess.order[q.id];
+  if (shuffleOnFor(sess.kind)) {
+    sess.order[q.id] = shuffleOrder(q);
+    return sess.order[q.id];
+  }
+  return q.options.map(o => o.k);
 }
 /* last result per unique qid (a re-queued Way off answer replaces the first) */
 function sessionFinals(sess) {
@@ -1141,6 +1233,7 @@ function renderSessionStep(host, sess, opts) {
     let submitBtn = null;
     const card = questionCard(q, "ask", {
       picked: sess.picked,
+      order: sessionOrder(sess, q),
       onPick(picked) {
         /* keep picks on the session so navigating away and back preserves them */
         sess.picked = picked;
@@ -1185,9 +1278,10 @@ function renderSessionStep(host, sess, opts) {
       let idx = -1;
       if (/^[1-9]$/.test(ev.key)) idx = Number(ev.key) - 1;
       else if (/^[a-zA-Z]$/.test(ev.key)) idx = ev.key.toLowerCase().charCodeAt(0) - 97;
-      if (idx >= 0 && idx < q.options.length) {
+      const kkeys = card.__keys || q.options.map(o => o.k);
+      if (idx >= 0 && idx < kkeys.length) {
         ev.preventDefault();
-        card.__choose(q.options[idx].k);
+        card.__choose(kkeys[idx]);
       }
     });
     return;
@@ -1195,7 +1289,7 @@ function renderSessionStep(host, sess, opts) {
 
   /* ----- feedback (restored after navigating away) ----- */
   if (sess.step === "feedback") {
-    host.appendChild(questionCard(q, "answered", { picked: sess.picked, graded: sess.graded }));
+    host.appendChild(questionCard(q, "answered", { picked: sess.picked, graded: sess.graded, order: sess.order[qid] || null }));
     nextBar();
   }
 }
@@ -1234,7 +1328,8 @@ function resultsSection(w, data) {
     b.addEventListener("click", () => {
       detail.textContent = "";
       detail.appendChild(el("p", "kicker dim", "Review: " + q.id.toUpperCase() + " as you answered it"));
-      detail.appendChild(questionCard(q, "answered", { picked: r.picked, graded: { cat: r.cat, score: r.cat === "perfect" ? 1 : 0 } }));
+      const order = data.order && data.order[r.qid] ? data.order[r.qid] : null;
+      detail.appendChild(questionCard(q, "answered", { picked: r.picked, graded: { cat: r.cat, score: r.cat === "perfect" ? 1 : 0 }, order }));
       const back = iconText("button", "btn", "back", "Back to result summary");
       back.addEventListener("click", () => { detail.textContent = ""; window.scrollTo(0, 0); });
       detail.appendChild(back);
@@ -1271,12 +1366,22 @@ function resultsSection(w, data) {
 /* ---------------- Test panel ---------------- */
 function renderTest(w, host) {
   const sess = wsessions["test" + w];
-  if (sess) { renderSessionStep(host, sess, { onFinish: () => finishTest(w, sess) }); return; }
+  if (sess) {
+    /* strip lives outside the per-step host so it survives every question */
+    const stack = el("div");
+    stack.appendChild(shuffleStrip("test"));
+    const inner = el("div");
+    stack.appendChild(inner);
+    host.appendChild(stack);
+    renderSessionStep(inner, sess, { onFinish: () => finishTest(w, sess) });
+    return;
+  }
 
   host.appendChild(el("h2", null, "Week " + w + " test"));
   const c = el("section", "card");
   c.appendChild(el("p", "dim small",
     "10 questions, one at a time. Multi-select answers must include every correct option, exactly like the real assignments — but scoring is strict: 1 mark only for a Perfect answer."));
+  c.appendChild(shuffleStrip("test"));
   const b = iconText("button", "btn primary big", "play", state.testTaken[w] ? "Retake test" : "Start test");
   b.addEventListener("click", () => {
     wsessions["test" + w] = makeSession(WEEKS[w - 1].questions.map(q => q.id), "test", w);
@@ -1298,14 +1403,23 @@ function finishTest(w, sess) {
   state.testTaken[w] = Date.now();
   save();
   wsessions["test" + w] = null;
-  lastTest[w] = { score, takenAt: state.testTaken[w], results: finals };
+  lastTest[w] = { score, takenAt: state.testTaken[w], results: finals, order: sess.order || {} };
   clearActions();
   route();
 }
 
 function renderWeekPile(w, host) {
   const sess = wsessions["wpile" + w];
-  if (sess) { renderSessionStep(host, sess, { onFinish: () => finishWeekPile(w, host, sess) }); return; }
+  if (sess) {
+    /* strip lives outside the per-step host so it survives every question */
+    const stack = el("div");
+    stack.appendChild(shuffleStrip());
+    const inner = el("div");
+    stack.appendChild(inner);
+    host.appendChild(stack);
+    renderSessionStep(inner, sess, { onFinish: () => finishWeekPile(w, inner, sess) });
+    return;
+  }
 
   if (!state.testTaken[w]) {
     host.appendChild(heading("Weak pile", "layers"));
@@ -1333,6 +1447,7 @@ function renderWeekPile(w, host) {
   const c = el("section", "card");
   c.appendChild(el("h2", null, pile.length + " weak questions"));
   c.appendChild(el("p", "dim small", lv1 + " at level 1 · " + (pile.length - lv1) + " at level 2. Level 1 first, least recently seen next. Answering moves levels; retaking the test recalculates the pile."));
+  c.appendChild(shuffleStrip());
   const b = iconText("button", "btn primary big", "play", "Start weak pile session");
   b.addEventListener("click", () => {
     wsessions["wpile" + w] = makeSession(pile, "wpile", w);
@@ -1369,7 +1484,6 @@ function finishWeekPile(w, host, sess) {
 function renderMixedPile() {
   APP.appendChild(topbar("Weak pile", "mixed across all weeks", { back: true }));
   const host = el("div");
-  APP.appendChild(host);
   if (!mixedSession) mixedSession = makeSession(mixedPile().slice(0, 20), "mixed");
   const sess = mixedSession;
   if (!sess.queue.length) {
@@ -1379,9 +1493,13 @@ function renderMixedPile() {
     c.appendChild(el("p", "dim small", "Take a week Test first — questions you slip on land here."));
     c.appendChild(Object.assign(iconText("a", "btn primary big", "home", "Home"), { href: "#/" }));
     host.appendChild(c);
+    APP.appendChild(host);
     mixedSession = null;
     return;
   }
+  /* strip sits outside the session host so it survives every step */
+  APP.appendChild(shuffleStrip());
+  APP.appendChild(host);
   renderSessionStep(host, sess, { onFinish: () => finishMixed(host, sess) });
 }
 function finishMixed(host, sess) {

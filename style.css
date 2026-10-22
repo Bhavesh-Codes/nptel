@@ -223,6 +223,26 @@ h2.withicon .icon { color: var(--ink-2); }
 }
 .btn.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
 .btn.big { width: 100%; min-height: 48px; font-size: .98rem; }
+.btn.sm { padding: 6px 12px; font-size: .82rem; }
+
+/* per-question show/hide toggle lives in the card head, right-aligned */
+.question-head .qtoggle { margin-left: auto; }
+
+/* weak-pile shuffle strip */
+.shuffrow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 10px 0 6px;
+  padding: 10px 14px;
+  background: var(--bg-soft);
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-sm);
+}
+.shuffrow .shuftext { min-width: 0; flex: 1; display: grid; gap: 2px; }
+.shuffrow .shuftext b { font-size: .88rem; }
+.shuffrow .shuftext span { font-size: .78rem; color: var(--ink-2); }
+.shuffrow .btn { flex: 0 0 auto; min-width: 64px; }
 .btn:disabled, .btn[aria-disabled="true"] {
   opacity: .45;
   pointer-events: none;
