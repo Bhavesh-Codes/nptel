@@ -161,6 +161,132 @@ function qs(qid) { /* per-question recorded state (spec Step 4) */
   return state.q[qid];
 }
 
+/* wipe all saved progress (used by the Home "Reset" card).
+   Removes the versioned localStorage key, resets the in-memory state,
+   drops any live sessions and re-renders. Theme preference is kept. */
+function clearAllProgress() {
+  try { localStorage.removeItem(KEY); } catch (e) { /* storage already unusable */ }
+  state = { v: 1, q: {}, testTaken: {} };
+  Object.keys(wsessions).forEach(k => { delete wsessions[k]; });
+  Object.keys(lastTest).forEach(k => { delete lastTest[k]; });
+  mixedSession = null;
+  storageOK = true;
+  toast("Progress cleared — starting fresh");
+  go("#/");
+  route();
+}
+
+/* ------------------------------------------------------------------ *
+ * 2b. Backup: export / import progress (JSON snapshot)
+ * ------------------------------------------------------------------ */
+const APP_TAG = "nptel-se-study";
+function exportSnapshot() {
+  const s = homeStats();
+  return JSON.stringify({
+    app: APP_TAG,
+    v: 1,
+    exportedAt: new Date().toISOString(),
+    totals: { mastered: s.mastered, attempted: s.attempted, weak: s.weak },
+    q: state.q,
+    testTaken: state.testTaken,
+  }, null, 2);
+}
+
+/* validate + sanitize an imported snapshot; only known question ids survive */
+function importSnapshot(text) {
+  let data;
+  try { data = JSON.parse(text); }
+  catch (e) { return { error: "That is not valid JSON — paste the whole exported file." }; }
+  if (!data || data.app !== APP_TAG || !data.q || typeof data.q !== "object") {
+    return { error: "This doesn't look like a progress file from this app. Import the JSON you exported here." };
+  }
+  const LEVELS = ["perfect", "almost", "wrongpick", "wayoff"];
+  const clean = { v: 1, q: {}, testTaken: {} };
+  let n = 0;
+  Object.entries(data.q).forEach(([qid, s]) => {
+    if (!QMAP[qid] || !s || typeof s !== "object") return;
+    const wp = {}, ms = {};
+    if (s.wp && typeof s.wp === "object") Object.entries(s.wp).forEach(([k, v]) => { if (typeof v === "number" && isFinite(v)) wp[k] = v; });
+    if (s.ms && typeof s.ms === "object") Object.entries(s.ms).forEach(([k, v]) => { if (typeof v === "number" && isFinite(v)) ms[k] = v; });
+    clean.q[qid] = {
+      lv: Math.max(0, Math.min(3, Math.round(s.lv || 0))),
+      att: Math.max(0, Math.round(s.att || 0)),
+      last: typeof s.last === "number" && isFinite(s.last) ? s.last : 0,
+      res: LEVELS.includes(s.res) ? s.res : null,
+      wp, ms,
+    };
+    n++;
+  });
+  if (data.testTaken && typeof data.testTaken === "object") {
+    Object.entries(data.testTaken).forEach(([w, t]) => {
+      if (typeof t === "number" && isFinite(t)) clean.testTaken[w] = t;
+    });
+  }
+  return { ok: true, clean, questions: n };
+}
+
+/* replace current in-memory+stored progress with a validated snapshot */
+function applyImported(r) {
+  state = r.clean;
+  save();
+  Object.keys(wsessions).forEach(k => { delete wsessions[k]; });
+  Object.keys(lastTest).forEach(k => { delete lastTest[k]; });
+  mixedSession = null;
+  toast(`Imported ${r.questions} question${r.questions === 1 ? "" : "s"} — welcome back`);
+  go("#/");
+  route();
+}
+
+/* Export: save the snapshot as a .json download; fall back to a copyable text modal */
+function downloadProgress() {
+  const text = exportSnapshot();
+  try {
+    const blob = new Blob([text], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "nptel-se-progress-" + new Date().toISOString().slice(0, 10) + ".json";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => { try { URL.revokeObjectURL(url); } catch (e) {} }, 3000);
+    toast("Progress file downloaded — keep it safe");
+  } catch (e) { showTextModal("Your progress (JSON)", text); }
+}
+
+/* Copyable-text modal (fallback when downloads are blocked) */
+function showTextModal(title, text) {
+  const ov = el("div", "overlay");
+  const m = el("div", "modal");
+  m.appendChild(el("h3", null, title));
+  m.appendChild(el("p", "dim small", "Copy this and keep it anywhere — email, notes, chat to yourself. Paste it back via Import on another device."));
+  const ta = el("textarea", "modalta");
+  ta.value = text;
+  ta.readOnly = true;
+  ta.addEventListener("focus", () => ta.select());
+  m.appendChild(ta);
+  const row = el("div"); row.style.cssText = "display:flex;gap:10px;margin-top:12px";
+  const cp = el("button", "btn primary", "Copy");
+  cp.addEventListener("click", () => {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(ta.value)
+        .then(() => toast("Copied to clipboard"))
+        .catch(() => { ta.select(); let okk = false; try { okk = document.execCommand("copy"); } catch (err) {} toast(okk ? "Copied to clipboard" : "Select the text and copy manually"); });
+    } else {
+      ta.select();
+      let okk = false; try { okk = document.execCommand("copy"); } catch (err) {}
+      toast(okk ? "Copied to clipboard" : "Select the text and copy manually");
+    }
+  });
+  const done = el("button", "btn", "Done");
+  done.addEventListener("click", () => ov.remove());
+  row.append(cp, done);
+  m.appendChild(row);
+  ov.appendChild(m);
+  document.body.appendChild(ov);
+  ov.addEventListener("click", e => { if (e.target === ov) ov.remove(); });
+}
+
 /* ------------------------------------------------------------------ *
  * 3. Grading engine  (spec Step 5)
  * ------------------------------------------------------------------ */
@@ -615,6 +741,7 @@ let mixedSession = null;
 function route() {
   clearActions();
   setKeyHandler(null);
+  $$(".overlay").forEach(o => o.remove());
   const { seg } = parseHash();
   APP.textContent = "";
   window.scrollTo(0, 0);
@@ -783,8 +910,85 @@ function renderHome() {
     APP.appendChild(list);
   }
 
+  /* backup — export/import to move progress between devices */
+  APP.appendChild(el("h2", null, "Backup"));
+  const bk = el("section", "card");
+  bk.appendChild(el("p", "dim small", "Save your progress to a small JSON file and load it on another device — e.g. laptop \u2192 phone. The site itself doesn't sync anything; the file is the transfer."));
+  const bkrow = el("div");
+  bkrow.style.cssText = "display:flex;gap:10px;flex-wrap:wrap";
+  const bexp = el("button", "btn", "\u2913 Export data");
+  bexp.addEventListener("click", downloadProgress);
+  const bimp = el("button", "btn", "\u2911 Import data");
+  bimp.setAttribute("aria-expanded", "false");
+  const impbox = el("div", "impbox hidden");
+  bimp.addEventListener("click", () => {
+    const show = impbox.classList.contains("hidden");
+    impbox.classList.toggle("hidden", !show);
+    bimp.setAttribute("aria-expanded", String(show));
+    bimp.textContent = show ? "\u2911 Close import" : "\u2911 Import data";
+  });
+  bkrow.append(bexp, bimp);
+  bk.appendChild(bkrow);
+  impbox.innerHTML = ""
+    + '<label class="filelike">Choose export file\u2026'
+    + '<input type="file" id="impFile" accept=".json,application/json,application/x-json"></label>'
+    + '<textarea id="impText" class="modalta" placeholder="\u2026or paste the exported JSON here" spellcheck="false" aria-label="Exported JSON"></textarea>'
+    + '<button class="btn primary" id="impGo">Import &amp; replace current progress</button>'
+    + '<div id="impMsg" class="impmsg" role="status"></div>';
+  bk.appendChild(impbox);
+  APP.appendChild(bk);
+
+  {
+    const fileInput = impbox.querySelector("#impFile");
+    const ta = impbox.querySelector("#impText");
+    const goImp = impbox.querySelector("#impGo");
+    const msg = impbox.querySelector("#impMsg");
+    const msgOk = (t) => { msg.className = "impmsg"; msg.textContent = t; };
+    const msgErr = (t) => { msg.className = "impmsg imp-err"; msg.textContent = t; };
+    fileInput.addEventListener("change", () => {
+      const f = fileInput.files && fileInput.files[0];
+      if (!f) return;
+      msgOk("Reading file\u2026");
+      Promise.resolve(f.text ? f.text() : null)
+        .then(t => { if (typeof t === "string" && t) { ta.value = t; msgOk("File loaded — tap Import below."); } else { return Promise.reject(new Error("empty")); } })
+        .catch(() => msgErr("Could not read that file — open it and paste the JSON instead."));
+    });
+    goImp.addEventListener("click", () => {
+      const r = importSnapshot(ta.value);
+      if (r.error) { msgErr(r.error); return; }
+      ta.value = "";
+      applyImported(r);
+    });
+  }
+
+  /* reset — wipe local progress and start fresh (two-tap confirm) */
+  APP.appendChild(el("h2", null, "Reset"));
+  const dz = el("section", "card");
+  dz.appendChild(el("p", "dim small", "Wipe every trace of saved progress from this browser — question levels, attempts, trip counters, weak pile and test results. The Learn content and this app are not affected."));
+  const clr = el("button", "btn danger big", "Clear progress & start fresh");
+  let armTimer = null;
+  const disarm = () => {
+    if (!clr.isConnected) return;
+    clr.classList.remove("armed");
+    clr.textContent = "Clear progress & start fresh";
+  };
+  clr.addEventListener("click", () => {
+    if (!clr.classList.contains("armed")) {
+      clr.classList.add("armed");
+      clr.textContent = "Tap again — this deletes everything";
+      toast("Tap once more to confirm");
+      clearTimeout(armTimer);
+      armTimer = setTimeout(disarm, 5000);
+      return;
+    }
+    clearTimeout(armTimer);
+    clearAllProgress();
+  });
+  dz.appendChild(clr);
+  APP.appendChild(dz);
+
   const foot = el("footer", "colo");
-  foot.textContent = "120 questions parsed from the 12 NPTEL assignment PDFs. Progress is stored only in this browser (localStorage).";
+  foot.textContent = "120 questions parsed from the 12 NPTEL assignment PDFs. Progress lives only in this browser — use Backup (above) to move it to another device.";
   if (!storageOK) {
     const warn = el("div", null, "Storage unavailable — your progress won't be saved.");
     warn.style.color = "var(--warn)";

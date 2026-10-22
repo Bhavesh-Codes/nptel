@@ -228,6 +228,80 @@ h2.withicon .icon { color: var(--ink-2); }
   pointer-events: none;
 }
 .btn.danger { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 45%, var(--line)); }
+.btn.danger.armed { background: var(--bad); border-color: transparent; color: #ffffff; }
+
+/* backup — export/import box */
+.impbox {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--line);
+  display: grid;
+  gap: 10px;
+}
+.filelike {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 8px 12px;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--bg-soft);
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+}
+.filelike:hover { border-color: var(--accent); color: var(--accent); }
+.filelike:focus-within { border-color: var(--accent); }
+.filelike input[type="file"] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.modalta {
+  width: 100%;
+  min-height: 110px;
+  resize: vertical;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--bg-soft);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: .78rem;
+  line-height: 1.45;
+}
+.modalta:focus { outline: none; border-color: var(--accent); }
+.impmsg { font-size: .85rem; color: var(--ink-2); min-height: 1em; }
+.impmsg.imp-err { color: var(--bad); }
+
+/* export-fallback modal (copyable text) */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 8, 16, .55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: calc(16px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) calc(16px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left));
+  z-index: 90;
+}
+.modal {
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius, 14px);
+  padding: 16px;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, .35);
+}
+.modal h3 { margin: 0 0 6px; font-size: 1.05rem; }
+.modal .modalta { min-height: 40vh; }
 .btn:focus-visible,
 .iconbtn:focus-visible,
 .chip:focus-visible,

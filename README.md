@@ -14,6 +14,7 @@ Everything is static — plain HTML/CSS/JS with no build step and no backend —
   - **Weak pile** — locked until the week's test is taken; contains your levels 1–2 questions, level 1 first, LRU ordered; updates live as you answer and on every retake.
 - **Grading buckets** — *Perfect* (exact match, 1 mark), *Almost* (right options only but some missed), *Wrong pick* (≥1 wrong option, right ≥ wrong), *Way off* (re-queued **once** at the end of the session). A mastered question that slips re-enters the weak pile; a perfect answer only ever pushes levels up (max 3).
 - **Trip tracking** — the app remembers which options you keep wrongly picking or keep missing and tells you (“you keep missing option c”).
+- **Backup** — export progress as a JSON file and import it on another device (e.g. laptop → phone via the same GitHub Pages link); import is validated and sanitised before it replaces local state.
 - **Learn pages** with genuine diagrams: use-case `«include»`/`«extend»` recreations, class diagrams with multiplicities, composition diamonds, a sequence diagram, and the course-management use-case diagram.
 - **Keyboard-first answering** — `1`–`9` or `A`–`Z` selects an option, `Enter` submits, and `Enter` / `Space` / `→` advances after feedback. Option rows show their shortcut badges.
 - **Responsive by design** — a single flat academic visual system: warm paper, navy ink, 1px rules, six-pixel corners, serif questions and sans-serif UI text. No gradients, glow or motion; safe-area insets and ≥44 px tap targets on phones.
@@ -65,7 +66,19 @@ Week titles live in one config object: `window.SE_DATA.titles` at the top of [`d
 
 ## Progress storage
 
-State is saved in `localStorage` under the versioned key **`nptel-se-study:v1`** (theme under `nptel-se-theme`), wrapped in try/catch with an in-memory fallback if storage is unavailable. Progress per question: level 0–3, attempt count, last-seen time, last result, and per-option wrong/missed counters. There is deliberately **no export button** — progress is private to your browser.
+State is saved in `localStorage` under the versioned key **`nptel-se-study:v1`** (theme under `nptel-se-theme`), wrapped in try/catch with an in-memory fallback if storage is unavailable. Progress per question: level 0–3, attempt count, last-seen time, last result, and per-option wrong/missed counters.
+
+To wipe everything and start over, Home has a **Reset → “Clear progress & start fresh”** card with a two-tap confirmation (armed for 5 seconds): the first tap asks, the second tap deletes the versioned storage key, clears in-memory sessions and re-renders. Your theme preference is kept.
+
+### Backup & cross-device transfer
+
+The **Backup** card on Home exports/imports progress as a small JSON file — there is no server or account; the file *is* the transfer:
+
+1. **Export** on the device that has the progress — downloads `nptel-se-progress-YYYY-MM-DD.json` (Downloads folder). If downloads are blocked (e.g. some in-app browsers), a copy-modal with the raw JSON appears instead.
+2. **Move the file** to the other device by any channel you like: email it to yourself, WhatsApp “message yourself”, Google Drive/OneDrive link, Telegram, or a USB cable. You can also skip the file entirely — copy the JSON text from the fallback modal and paste it into any notes app.
+3. **Import** on the target device: Home → Backup → *Import data* → **Choose export file…** (or paste the JSON into the box) → *Import & replace current progress*. Existing progress on that device is replaced by the file's version.
+
+The import is sanitised: only question ids that exist in the app are kept, levels are clamped to 0–3, invalid fields dropped — a malformed or foreign file can't corrupt local state. The snapshot contains only anonymous study progress (no personal data).
 
 ## Tech notes
 
